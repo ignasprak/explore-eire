@@ -1,5 +1,8 @@
 "use client"
 
+import Image from 'next/image';
+import logo from 'https://github.com/ignasprak/explore-eire/blob/development/explore-eire/public/images/logo.png';
+
 function NavLink({ to, children }: { to: string, children: React.ReactNode }) {
     return <a href={to} className={`mx-4`}>
         {children}
@@ -10,7 +13,7 @@ export default function Navbar() {
     return (
         <nav className="flex filter drop-shadow-md bg-white px-4 py-4 h-24 items-center">
             <div className="w-3/12 flex items-center">
-                <a className="text-4xl font-semibold" href="/">Explore Eire</a>
+                <Image src={logo} alt="Logo" width={50} height={50} />
             </div>
             <div className="w-6/12 flex justify-center items-center">
                 <p className="text-xl font-semibold mr-4 ">
