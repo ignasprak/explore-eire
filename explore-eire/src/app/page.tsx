@@ -5,11 +5,11 @@ import Map from '../components/map';
 
 export default function Home() {
   return (
-    <div className="bg-green-600 font-sans min-h-screen flex flex-col">
+    <div className="bg-primary font-sans min-h-screen flex flex-col">
       <Navbar />
 
       {/* Map Section */}
-      <div className="bg-white p-6 w-11/12 rounded-lg mx-auto mb-4 mt-4">
+      <div className="bg-background p-6 w-11/12 rounded-lg mx-auto mb-4 mt-4">
         <Map />
       </div>
 
