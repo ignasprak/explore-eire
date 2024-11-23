@@ -8,7 +8,7 @@ export default function Home() {
 
       {/* Map Section */}
       <div className="bg-white p-6 w-11/12 rounded-lg mx-auto mb-4 mt-4">
-        <div className="w-full h-[48rem] bg-gray-200 mb-2 flex justify-center items-center">
+        <div className="w-full h-[56.5rem] bg-gray-200 mb-2 flex justify-center items-center">
           <span>MAP SECTION</span>
         </div>
       </div>
