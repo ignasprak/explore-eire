@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from 'react'
-// import Image from 'next/image'
 
 function NavLink({ to, children }: { to: string, children: React.ReactNode }) {
     return <a href={to} className={`mx-4`}>
