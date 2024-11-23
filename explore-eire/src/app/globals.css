@@ -19,5 +19,14 @@ button {
 }
 
 button:hover {
-  transform: scale(1.6);
+  transform: scale(1.7);
+}
+
+/* text */
+p {
+  font-size: 1vw;
+}
+
+h1 {
+  font-size: 3vw;
 }
