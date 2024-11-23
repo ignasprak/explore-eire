@@ -1,5 +1,7 @@
+import 'mapbox-gl/dist/mapbox-gl.css';
 import Navbar from '../components/navbar'
 import ForYou from '../components/foryou'
+import Map from '../components/map';
 
 export default function Home() {
   return (
@@ -8,9 +10,7 @@ export default function Home() {
 
       {/* Map Section */}
       <div className="bg-white p-6 w-11/12 rounded-lg mx-auto mb-4 mt-4">
-        <div className="w-full h-[56.5rem] bg-gray-200 mb-2 flex justify-center items-center">
-          <span>MAP SECTION</span>
-        </div>
+        <Map />
       </div>
 
       {/* Popular Section */}
