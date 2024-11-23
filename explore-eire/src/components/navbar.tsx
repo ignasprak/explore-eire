@@ -13,8 +13,9 @@ export default function Navbar() {
     return (
         <nav className="flex filter drop-shadow-md bg-white px-4 py-4 h-28 items-center">
             <div className="w-3/12 flex items-center">
-                <Image src={logo} alt="The Explore Eire Logo" layout="fixed" className='m-0 max-w-32' />
-                {/* <Image src={img1} alt="Cliffs of Moher" layout="fixed" className='object-contain max-w-full rounded-lg' /> */}
+                <button>
+                    <Image src={logo} alt="The Explore Eire Logo" layout="fixed" className='m-0 max-w-32' />
+                </button>
             </div>
             <div className="w-6/12 flex justify-center items-center">
                 <p className="text-xl font-semibold mr-4 ">
