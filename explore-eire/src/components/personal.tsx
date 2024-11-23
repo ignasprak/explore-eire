@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react";
-import WeatherSection from "./foryou/weathersection";
-import NearbySection from "./foryou/nearbysection";
-import PopularSection from "./foryou/popularsection";
-import ForYouSection from "./foryou/foryousection";
-import HiddenGemsSection from "./foryou/hiddengemssection";
+import WeatherSection from "./personal/weathersection";
+import NearbySection from "./personal/nearbysection";
+import PopularSection from "./personal/popularsection";
+import ForYouSection from "./personal/foryousection";
+import HiddenGemsSection from "./personal/hiddengemssection";
 
 export default function ForYou() {
     const [selectedOption, setSelectedOption] = useState("Popular");

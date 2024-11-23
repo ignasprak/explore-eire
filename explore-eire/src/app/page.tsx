@@ -1,6 +1,6 @@
 import 'mapbox-gl/dist/mapbox-gl.css';
 import Navbar from '../components/navbar'
-import ForYou from '../components/foryou'
+import ForYou from '../components/personal'
 import Map from '../components/map';
 
 export default function Home() {
