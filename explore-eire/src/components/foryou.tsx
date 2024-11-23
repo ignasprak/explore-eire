@@ -32,7 +32,7 @@ export default function ForYou() {
     };
 
     return (
-        <div className="bg-white p-6 w-11/12 h-[56.5rem] rounded-lg mx-auto">
+        <div className="bg-white p-6 w-11/12 h-auto rounded-lg mx-auto min-h-screen">
             <div className="flex items-center justify-between mb-4 bg-gray-200 rounded-lg p-5">
                 <button className="text-gray-600 ml-5" onClick={() => handleOptionClick("Weather")}>Weather</button>
                 <button className="text-gray-600 ml-5" onClick={() => handleOptionClick("Nearby")}>Nearby</button>
