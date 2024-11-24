@@ -28,3 +28,11 @@ p {
 h1 {
   font-size: 3vw;
 }
+
+/* Map container styles */
+.map-container {
+  border-radius: 15px;
+  /* Add rounded corners */
+  overflow: hidden;
+  /* Ensure content doesn't overflow the rounded corners */
+}
