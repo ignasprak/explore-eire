@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 
-// Set Mapbox access token
+// sett Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || 'pk.eyJ1IjoiaHVudGhhd2sxMSIsImEiOiJjbTN1anQ5a2wwa3BuMmxzN2k2bXhucnc2In0.MtdX1gZtTkXvDtb1RxWtuA';
 
 interface Location {
@@ -23,8 +23,9 @@ const Map = ({ locations }: { locations: Location[] }) => {
     const [map, setMap] = useState<mapboxgl.Map | null>(null);
     const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
     const [selectedFilter, setSelectedFilter] = useState<string>('All');
+    const [selectedCounty, setSelectedCounty] = useState<string>('All');
 
-    // Initialize Mapbox map
+    // initialise Mapbox map
     useEffect(() => {
         if (mapContainerRef.current && !map) {
             console.log('Initializing map...');
@@ -35,30 +36,61 @@ const Map = ({ locations }: { locations: Location[] }) => {
                 zoom: 6.5,
             });
 
+            // zoom and rotation controls to the map with customized zoomDelta.
+            mapInstance.addControl(new mapboxgl.NavigationControl({}), 'top-right');
+
             setMap(mapInstance);
         }
     }, [map]);
 
-    // Update markers when locations or filter changes
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .mapboxgl-popup-close-button:hover {
+                box-shadow: none !important;
+                background-color: transparent !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
+
+    // update markers when locations, filter, or county changes
     useEffect(() => {
         if (map) {
-            // Remove existing markers
+            // remove existing markers
             markers.forEach(marker => marker.remove());
 
-            // Add new markers based on the selected filter
+            // new markers based on the selected filter and county
             const newMarkers = locations
-                .filter(location => selectedFilter === 'All' || location.Tags.includes(selectedFilter))
+                .filter(location =>
+                    (selectedFilter === 'All' || location.Tags.includes(selectedFilter)) &&
+                    (selectedCounty === 'All' || location.County === selectedCounty)
+                )
                 .map(location => {
                     const marker = new mapboxgl.Marker()
                         .setLngLat([location.Longitude, location.Latitude])
                         .setPopup(
-                            new mapboxgl.Popup({ offset: 25 }).setHTML(`
-                                <h3>${location.Name}</h3>
-                                <p>${location.Address}</p>
-                                <p><strong>County:</strong> ${location.County}</p>
-                                <p><strong>Tags:</strong> ${location.Tags}</p>
-                                <a href="${location.Url}" target="_blank">Visit Website</a>
-                            `)
+                            new mapboxgl.Popup({ offset: 20, maxWidth: '400px', closeButton: true, closeOnClick: true, closeOnMove: false })
+                                .setHTML(`
+                                    <h2 style="font-size: 26px;"><strong>${location.Name}</strong></h2> <br>
+                                    <p><strong>County:</strong> ${location.County}</p> <br>
+                                    <p><strong>Tags:</strong> ${location.Tags.split(',').map(tag => `<span style="display: inline-block; margin-right: 10px; padding: 2px 5px; background-color: #e0e0e0; border-radius: 3px;">${tag.trim()}</span>`).join(' ')}</p> <br>
+                                    <a href="${location.Url}" target="_blank" style="font-size: 18px; color: blue;">Visit Website</a> <br> <br>
+                                    <button style="background-color: #83b271; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">Mark as Completed</button>
+                                `)
+                                .on('open', () => {
+                                    const popup = document.querySelector('.mapboxgl-popup');
+                                    if (popup) {
+                                        const closeButton = popup.querySelector('.mapboxgl-popup-close-button');
+                                        if (closeButton) {
+                                            (closeButton as HTMLElement).style.fontSize = '50px'; // adjust size 
+                                        }
+                                    }
+                                })
                         )
                         .addTo(map);
                     return marker;
@@ -66,27 +98,32 @@ const Map = ({ locations }: { locations: Location[] }) => {
 
             setMarkers(newMarkers);
         }
-    }, [locations, selectedFilter, map]);
+    }, [locations, selectedFilter, selectedCounty, map]);
 
     return (
         <div className="flex">
             {/* filter Section */}
             <div className="w-1/6 p-4 mr-2">
                 <h2 className="mb-4">Filter by Tag:</h2>
-                <select id="filter" value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value)} className="w-full p-2 border rounded">
+                <select id="tag-filter" value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value)} className="w-full p-2 border rounded">
                     <option value="All">All</option>
-                    <option value="Scenic">Scenic</option>
-                    <option value="Nature">Nature</option>
-                    <option value="Historic">Historic</option>
                     <option value="Activity">Activity</option>
-                    <option value="Experience">Experience</option>
+                    <option value="Beach">Beach</option>
                     <option value="Castle">Castle</option>
+                    <option value="Experience">Experience</option>
+                    <option value="Fishing">Fishing</option>
                     <option value="Food">Food</option>
-                    <option value="Sea">Sea</option>
+                    <option value="Golf">Golf</option>
+                    <option value="Historic">Historic</option>
+                    <option value="Learning">Learning</option>
+                    <option value="Nature">Nature</option>
+                    <option value="Tour">Tour</option>
+                    <option value="Venue">Venue</option>
+                    <option value="Walking">Walking</option>
                 </select>
 
                 <h2 className="mt-4 mb-4">Filter by County:</h2>
-                <select id="filter" value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value)} className="w-full p-2 border rounded">
+                <select id="county-filter" value={selectedCounty} onChange={(e) => setSelectedCounty(e.target.value)} className="w-full p-2 border rounded">
                     <option value="All">All</option>
                     <option value="Carlow">Carlow</option>
                     <option value="Cavan">Cavan</option>

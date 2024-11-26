@@ -1,12 +1,15 @@
 "use client"
 
+import Link from 'next/link';
 import Image from 'next/image';
 import logo from '../../public/images/logoedit.png';
 
 function NavLink({ to, children }: { to: string, children: React.ReactNode }) {
-    return <a href={to} className={`mx-4`}>
-        {children}
-    </a>
+    return (
+        <Link href={to} className="mx-4">
+            {children}
+        </Link>
+    );
 }
 
 export default function Navbar() {
