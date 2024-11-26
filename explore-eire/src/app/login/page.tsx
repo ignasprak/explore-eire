@@ -43,7 +43,7 @@ export default function SignIn() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="min-h-screen flex items-center justify-center bg-primary">
             <div className="bg-white p-8 rounded shadow-md w-96">
                 <h2 className="text-2xl font-bold mb-6">Sign In</h2>
                 <form onSubmit={handleSignIn}>
@@ -81,6 +81,13 @@ export default function SignIn() {
                     Dont have an account?{" "}
                     <a href="/register" className="text-blue-500 hover:underline">
                         Register
+                    </a>
+                </p>
+
+                <p className="mt-4 text-gray-600 text-center">
+                    Go back?{" "}
+                    <a href="/" className="text-blue-500 hover:underline">
+                        Homepage
                     </a>
                 </p>
             </div>
