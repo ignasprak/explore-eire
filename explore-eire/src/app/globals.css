@@ -29,6 +29,11 @@ h1 {
   font-size: 3vw;
 }
 
+html,
+body {
+  background-color: var(--primary-color);
+}
+
 /* Map container styles */
 .map-container {
   border-radius: 15px;
