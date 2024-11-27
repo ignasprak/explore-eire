@@ -14,35 +14,39 @@ export default function Navbar() {
         if (error) {
             console.error("Error signing out:", error.message);
         } else {
-            // Clear user-related data from local storage or any other client-side storage
             localStorage.clear();
             sessionStorage.clear();
-            window.location.reload(); // Reload the page to reset the state
+            window.location.reload();
         }
     };
 
     return (
-        <nav className="flex filter drop-shadow-md bg-background px-4 py-4 h-28 items-center">
+        <nav className="flex filter drop-shadow-md bg-background px-4 py-4 h-28 items-center relative">
             {/* the explore eire logo */}
             <div className="w-3/12 flex items-center">
-                <Link href="/">
+                <Link href="/" legacyBehavior>
                     <button>
                         <Image src={logo} alt="The Explore Eire Logo" layout="fixed" className='m-0 max-w-36' />
                     </button>
                 </Link>
             </div>
 
-            {/* AI search bar */}
-            <div className="w-6/12 flex justify-center items-center">
-                <p className="text-xl font-semibold mr-4 ">
-                    <a className="underline decoration-pink-500 text-left">AI</a> <a className="underline decoration-indigo-500">SEARCH</a>
-                </p>
-                <input
-                    type="text"
-                    placeholder="Search... FEATURE YET TO BE IMPLEMENTED"
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"
-                />
+            {/* clickable links */}
+            <div className="w-6/12 flex justify-center items-center space-x-4">
+                <Link href="/collections" legacyBehavior>
+                    <a className="text-gray-700 hover:underline">Collections</a>
+                </Link>
+                <Link href="/account-settings" legacyBehavior>
+                    <a className="text-gray-700 hover:underline">Account Settings</a>
+                </Link>
+                <Link href="/completed-attractions" legacyBehavior>
+                    <a className="text-gray-700 hover:underline">Completed Attractions</a>
+                </Link>
+                <Link href="/groups" legacyBehavior>
+                    <a className="text-gray-700 hover:underline">Groups</a>
+                </Link>
             </div>
+
             {/* menu buttons for user customisation */}
             <div className="w-3/12 flex justify-end items-center">
                 {user ? (
@@ -54,11 +58,11 @@ export default function Navbar() {
                     </>
                 ) : (
                     <>
-                        <Link href="/register" className="mx-4">
-                            Register
+                        <Link href="/register" legacyBehavior>
+                            <a className="mx-4">Register</a>
                         </Link>
-                        <Link href="/login" className="mx-4">
-                            Login
+                        <Link href="/login" legacyBehavior>
+                            <a className="mx-4">Login</a>
                         </Link>
                     </>
                 )}

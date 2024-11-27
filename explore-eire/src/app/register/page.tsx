@@ -50,7 +50,10 @@ export default function Register() {
                 }
 
                 setSuccess("Registration successful! Redirecting...");
-                router.push("/"); // redirect to home page after successful registration
+                setTimeout(() => {
+                    router.push("/login"); // redirect to home page after successful registration
+                }, 2000);
+                
             }
         } catch (err: unknown) {
             if (err instanceof Error) {

@@ -27,7 +27,7 @@ export default function SignIn() {
 
             if (!data.user?.email_confirmed_at) {
                 setIsEmailConfirmed(false);
-                throw new Error("Please confirm your email before signing in.");
+                throw new Error("If you have just registered, please remember to confirm your email");
             }
 
             setIsEmailConfirmed(true);
