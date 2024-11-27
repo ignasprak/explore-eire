@@ -78,26 +78,42 @@ const Map = ({ locations }: { locations: Location[] }) => {
     useEffect(() => {
         if (map) {
             // Remove existing markers
-            markers.forEach(marker => marker.remove());
-
+            markers.forEach((marker) => marker.remove());
+    
             // Add new markers based on the selected filter and county
             const newMarkers = locations
-                .filter(location =>
-                    (selectedFilter === 'All' || location.Tags.includes(selectedFilter)) &&
-                    (selectedCounty === 'All' || location.County === selectedCounty)
+                .filter(
+                    (location) =>
+                        (selectedFilter === 'All' || location.Tags.includes(selectedFilter)) &&
+                        (selectedCounty === 'All' || location.County === selectedCounty)
                 )
-                .map(location => {
+                .map((location) => {
                     const marker = new mapboxgl.Marker()
                         .setLngLat([location.Longitude, location.Latitude])
                         .setPopup(
-                            new mapboxgl.Popup({ offset: 20, maxWidth: '400px', closeButton: true, closeOnClick: true, closeOnMove: false })
+                            new mapboxgl.Popup({
+                                offset: 20,
+                                maxWidth: '400px',
+                                closeButton: true,
+                                closeOnClick: true,
+                                closeOnMove: false,
+                            })
                                 .setHTML(`
                                     <h2 style="font-size: 26px;"><strong>${location.Name}</strong></h2> <br>
                                     <p><strong>County:</strong> ${location.County}</p> <br>
-                                    <p><strong>Tags:</strong> ${location.Tags.split(',').map(tag => `<span style="display: inline-block; margin-right: 10px; padding: 2px 5px; background-color: #e0e0e0; border-radius: 3px;">${tag.trim()}</span>`).join(' ')}</p> <br>
+                                    <p><strong>Tags:</strong> ${location.Tags.split(',').map(tag => `
+                                        <span style="display: inline-block; margin-right: 10px; padding: 2px 5px; background-color: #e0e0e0; border-radius: 3px;">
+                                            ${tag.trim()}
+                                        </span>`).join(' ')}</p> <br>
                                     <a href="${location.Url}" target="_blank" style="font-size: 18px; color: blue;">Visit Website</a> <br> <br>
-                                    <button style="background-color: #83b271; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">Mark as Completed</button>
-                                    ${user ? `<button id="add-to-collection" style="background-color: #83b271; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">Add to ${selectedCollection ? collections.find(c => c.id === selectedCollection)?.name : 'Collection'}</button>` : ''}
+                                    <button style="background-color: #83b271; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+                                        Mark as Completed
+                                    </button>
+                                    ${user ? `
+                                        <button id="add-to-collection-${location.id}" 
+                                            style="background-color: #83b271; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+                                            Add to ${selectedCollection ? collections.find(c => c.id === selectedCollection)?.name : 'Collection'}
+                                        </button>` : ''}
                                 `)
                                 .on('open', () => {
                                     const popup = document.querySelector('.mapboxgl-popup');
@@ -106,12 +122,22 @@ const Map = ({ locations }: { locations: Location[] }) => {
                                         if (closeButton) {
                                             (closeButton as HTMLElement).style.fontSize = '50px'; // Adjust size
                                         }
-
+    
                                         if (user) {
-                                            const addToCollectionButton = popup.querySelector('#add-to-collection');
+                                            const addToCollectionButton = popup.querySelector(`#add-to-collection-${location.id}`);
                                             if (addToCollectionButton) {
                                                 addToCollectionButton.addEventListener('click', async () => {
-                                                    await handleAddToCollection(location.id);
+                                                    if (!selectedCollection) {
+                                                        alert('Please select a collection first.');
+                                                        return;
+                                                    }
+                                                    try {
+                                                        await handleAddToCollection(location.id);
+                                                        alert(`"${location.Name}" added to your collection.`);
+                                                    } catch (error) {
+                                                        console.error('Error adding to collection:', error);
+                                                        alert('Failed to add to the collection. Please try again.');
+                                                    }
                                                 });
                                             }
                                         }
@@ -119,33 +145,48 @@ const Map = ({ locations }: { locations: Location[] }) => {
                                 })
                         )
                         .addTo(map);
+    
                     return marker;
                 });
-
+    
             setMarkers(newMarkers);
         }
     }, [locations, selectedFilter, selectedCounty, map, user, selectedCollection]);
+    
+    
 
-    const handleAddToCollection = async (locationId: string) => {
-        if (!selectedCollection) {
-            alert('Please select a collection first.');
+    const handleAddToCollection = async (locationId) => {
+        const location = locations.find((loc) => loc.id === locationId);
+    
+        if (!location) {
+            console.error('Location not found');
             return;
         }
-
-        const { error } = await supabase.from('collection_items').insert([
-            {
-                collection_id: selectedCollection,
-                location_id: locationId,
-            },
-        ]);
-
-        if (error) {
+    
+        try {
+            const { data, error } = await supabase
+                .from('collection_items')
+                .insert({
+                    collection_id: selectedCollection, // ID of the selected collection
+                    location_id: locationId, // Unique identifier for the marker
+                    metadata: {
+                        name: location.Name,
+                        address: location.Address,
+                        latitude: location.Latitude,
+                        longitude: location.Longitude,
+                        tags: location.Tags,
+                    }, // Store additional details as JSON
+                });
+    
+            if (error) throw error;
+            console.log('Item added to collection:', data);
+            return data;
+        } catch (error) {
             console.error('Error adding to collection:', error.message);
-            alert('Failed to add to collection.');
-        } else {
-            alert('Successfully added to collection!');
+            throw error;
         }
     };
+    
 
     return (
         <div className="flex">
