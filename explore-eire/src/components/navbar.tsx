@@ -32,18 +32,18 @@ export default function Navbar() {
             </div>
 
             {/* clickable links */}
-            <div className="w-6/12 flex justify-center items-center space-x-4">
+            <div className="w-6/12 flex justify-center items-center space-x-8">
                 <Link href="/collections" legacyBehavior>
-                    <a className="text-gray-700 hover:underline">Collections</a>
-                </Link>
-                <Link href="/account-settings" legacyBehavior>
-                    <a className="text-gray-700 hover:underline">Account Settings</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Collections</a>
                 </Link>
                 <Link href="/completed-attractions" legacyBehavior>
-                    <a className="text-gray-700 hover:underline">Completed Attractions</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Attractions</a>
                 </Link>
                 <Link href="/groups" legacyBehavior>
-                    <a className="text-gray-700 hover:underline">Groups</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Groups</a>
+                </Link>
+                <Link href="/account-settings" legacyBehavior>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Settings</a>
                 </Link>
             </div>
 

@@ -81,6 +81,7 @@ const Map = ({ locations }: { locations: Location[] }) => {
                                     <p><strong>Tags:</strong> ${location.Tags.split(',').map(tag => `<span style="display: inline-block; margin-right: 10px; padding: 2px 5px; background-color: #e0e0e0; border-radius: 3px;">${tag.trim()}</span>`).join(' ')}</p> <br>
                                     <a href="${location.Url}" target="_blank" style="font-size: 18px; color: blue;">Visit Website</a> <br> <br>
                                     <button style="background-color: #83b271; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">Mark as Completed</button>
+                                    <button> Add to Collection</button>
                                 `)
                                 .on('open', () => {
                                     const popup = document.querySelector('.mapboxgl-popup');
