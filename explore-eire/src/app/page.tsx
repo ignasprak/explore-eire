@@ -38,8 +38,8 @@ export default async function Home() {
         <Map locations={locations || []} />
       </div>
 
-      {/* Popular Section */}
-      <ForYou />
+      {/* Popular Section
+      <ForYou /> */}
 
     </div>
   );

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
+import { useAuth } from '@/app/lib/authContext';
+import { supabase } from '@/app/lib/supabaseClient';
 
 // sett Mapbox access token
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_API_KEY || 'pk.eyJ1IjoiaHVudGhhd2sxMSIsImEiOiJjbTN1anQ5a2wwa3BuMmxzN2k2bXhucnc2In0.MtdX1gZtTkXvDtb1RxWtuA';
@@ -24,8 +26,37 @@ const Map = ({ locations }: { locations: Location[] }) => {
     const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
     const [selectedFilter, setSelectedFilter] = useState<string>('All');
     const [selectedCounty, setSelectedCounty] = useState<string>('All');
+    const [selectedCollection, setSelectedCollection] = useState<string>('');
+    interface Collection {
+        id: string;
+        name: string;
+        user_id: string;
+    }
 
-    // initialise Mapbox map
+    const [collections, setCollections] = useState<Collection[]>([]);
+    const { user } = useAuth();
+
+    // Fetch collections for the signed-in user
+    useEffect(() => {
+        const fetchCollections = async () => {
+            if (user) {
+                const { data, error } = await supabase
+                    .from('collections')
+                    .select('*')
+                    .eq('user_id', user.id);
+
+                if (error) {
+                    console.error('Error fetching collections:', error.message);
+                } else {
+                    setCollections(data);
+                }
+            }
+        };
+
+        fetchCollections();
+    }, [user]);
+
+    // Initialize Mapbox map
     useEffect(() => {
         if (mapContainerRef.current && !map) {
             console.log('Initializing map...');
@@ -36,35 +67,20 @@ const Map = ({ locations }: { locations: Location[] }) => {
                 zoom: 6.5,
             });
 
-            // zoom and rotation controls to the map with customized zoomDelta.
-            mapInstance.addControl(new mapboxgl.NavigationControl({}), 'top-right');
+            // Add zoom and rotation controls to the map
+            mapInstance.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
             setMap(mapInstance);
         }
     }, [map]);
 
-    useEffect(() => {
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .mapboxgl-popup-close-button:hover {
-                box-shadow: none !important;
-                background-color: transparent !important;
-            }
-        `;
-        document.head.appendChild(style);
-
-        return () => {
-            document.head.removeChild(style);
-        };
-    }, []);
-
-    // update markers when locations, filter, or county changes
+    // Update markers when locations, filter, or county changes
     useEffect(() => {
         if (map) {
-            // remove existing markers
+            // Remove existing markers
             markers.forEach(marker => marker.remove());
 
-            // new markers based on the selected filter and county
+            // Add new markers based on the selected filter and county
             const newMarkers = locations
                 .filter(location =>
                     (selectedFilter === 'All' || location.Tags.includes(selectedFilter)) &&
@@ -81,14 +97,23 @@ const Map = ({ locations }: { locations: Location[] }) => {
                                     <p><strong>Tags:</strong> ${location.Tags.split(',').map(tag => `<span style="display: inline-block; margin-right: 10px; padding: 2px 5px; background-color: #e0e0e0; border-radius: 3px;">${tag.trim()}</span>`).join(' ')}</p> <br>
                                     <a href="${location.Url}" target="_blank" style="font-size: 18px; color: blue;">Visit Website</a> <br> <br>
                                     <button style="background-color: #83b271; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">Mark as Completed</button>
-                                    <button> Add to Collection</button>
+                                    ${user ? `<button id="add-to-collection" style="background-color: #83b271; padding: 10px 20px; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">Add to ${selectedCollection ? collections.find(c => c.id === selectedCollection)?.name : 'Collection'}</button>` : ''}
                                 `)
                                 .on('open', () => {
                                     const popup = document.querySelector('.mapboxgl-popup');
                                     if (popup) {
                                         const closeButton = popup.querySelector('.mapboxgl-popup-close-button');
                                         if (closeButton) {
-                                            (closeButton as HTMLElement).style.fontSize = '50px'; // adjust size 
+                                            (closeButton as HTMLElement).style.fontSize = '50px'; // Adjust size
+                                        }
+
+                                        if (user) {
+                                            const addToCollectionButton = popup.querySelector('#add-to-collection');
+                                            if (addToCollectionButton) {
+                                                addToCollectionButton.addEventListener('click', async () => {
+                                                    await handleAddToCollection(location.id);
+                                                });
+                                            }
                                         }
                                     }
                                 })
@@ -99,11 +124,32 @@ const Map = ({ locations }: { locations: Location[] }) => {
 
             setMarkers(newMarkers);
         }
-    }, [locations, selectedFilter, selectedCounty, map]);
+    }, [locations, selectedFilter, selectedCounty, map, user, selectedCollection]);
+
+    const handleAddToCollection = async (locationId: string) => {
+        if (!selectedCollection) {
+            alert('Please select a collection first.');
+            return;
+        }
+
+        const { error } = await supabase.from('collection_items').insert([
+            {
+                collection_id: selectedCollection,
+                location_id: locationId,
+            },
+        ]);
+
+        if (error) {
+            console.error('Error adding to collection:', error.message);
+            alert('Failed to add to collection.');
+        } else {
+            alert('Successfully added to collection!');
+        }
+    };
 
     return (
         <div className="flex">
-            {/* filter Section */}
+            {/* Filter Section */}
             <div className="w-1/6 p-4 mr-2">
                 <h2 className="mb-4">Filter by Tag:</h2>
                 <select id="tag-filter" value={selectedFilter} onChange={(e) => setSelectedFilter(e.target.value)} className="w-full p-2 border rounded">
@@ -154,6 +200,48 @@ const Map = ({ locations }: { locations: Location[] }) => {
                     <option value="Wicklow">Wicklow</option>
                 </select>
 
+                <h2 className='mt-4 mb-4'> Create a Collection:</h2>
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const collectionName = formData.get('collectionName') as string;
+
+                    if (user && collectionName) {
+                        const { data, error } = await supabase
+                            .from('collections')
+                            .insert([{ name: collectionName, user_id: user.id }]);
+
+                        if (error) {
+                            console.error('Error creating collection:', error.message);
+                        } else {
+                            console.log('Collection created:', data);
+                            if (data) {
+                                setCollections([...collections, ...data]);
+                            }
+                        }
+                    }
+                }}>
+                    <input
+                        type="text"
+                        name="collectionName"
+                        placeholder="Collection Name"
+                        className="w-full p-2 border rounded mb-2"
+                        required
+                    />
+                    <button type="submit" className="w-full p-2 bg-primary text-white rounded">
+                        Create
+                    </button>
+                </form>
+
+                <h2 className="mt-4 mb-4">Select a collection</h2>
+                <select id="collection-select" value={selectedCollection} onChange={(e) => setSelectedCollection(e.target.value)} className="w-full p-2 border rounded">
+                    <option value="">Select a collection</option>
+                    {collections.map(collection => (
+                        <option key={collection.id} value={collection.id}>
+                            {collection.name}
+                        </option>
+                    ))}
+                </select>
             </div>
 
             {/* Map Container */}
