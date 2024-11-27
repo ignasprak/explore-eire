@@ -50,7 +50,7 @@ export default function Register() {
                 }
 
                 setSuccess("Registration successful! Redirecting...");
-                router.push("/login"); // Redirect to login page after successful registration
+                router.push("/"); // redirect to home page after successful registration
             }
         } catch (err: unknown) {
             if (err instanceof Error) {
