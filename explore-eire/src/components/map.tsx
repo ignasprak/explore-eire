@@ -79,7 +79,7 @@ const Map = ({ locations }: { locations: Location[] }) => {
         if (map) {
             // Remove existing markers
             markers.forEach((marker) => marker.remove());
-    
+
             // Add new markers based on the selected filter and county
             const newMarkers = locations
                 .filter(
@@ -122,7 +122,7 @@ const Map = ({ locations }: { locations: Location[] }) => {
                                         if (closeButton) {
                                             (closeButton as HTMLElement).style.fontSize = '50px'; // Adjust size
                                         }
-    
+
                                         if (user) {
                                             const addToCollectionButton = popup.querySelector(`#add-to-collection-${location.id}`);
                                             if (addToCollectionButton) {
@@ -145,48 +145,63 @@ const Map = ({ locations }: { locations: Location[] }) => {
                                 })
                         )
                         .addTo(map);
-    
+
                     return marker;
                 });
-    
+
             setMarkers(newMarkers);
         }
     }, [locations, selectedFilter, selectedCounty, map, user, selectedCollection]);
-    
-    
 
     const handleAddToCollection = async (locationId) => {
         const location = locations.find((loc) => loc.id === locationId);
-    
+
         if (!location) {
             console.error('Location not found');
             return;
         }
-    
+
         try {
+            console.log('Attempting to insert:', {
+                collection_id: selectedCollection,
+                location_id: locationId,
+                metadata: {
+                    name: location.Name,
+                    address: location.Address,
+                    latitude: location.Latitude,
+                    longitude: location.Longitude,
+                    tags: location.Tags,
+                },
+            });
+
             const { data, error } = await supabase
-                .from('collection_items')
+                .from('user_collections')
                 .insert({
-                    collection_id: selectedCollection, // ID of the selected collection
-                    location_id: locationId, // Unique identifier for the marker
+                    collection_id: selectedCollection,
+                    location_id: locationId,
                     metadata: {
                         name: location.Name,
                         address: location.Address,
                         latitude: location.Latitude,
                         longitude: location.Longitude,
                         tags: location.Tags,
-                    }, // Store additional details as JSON
+                    },
                 });
-    
-            if (error) throw error;
-            console.log('Item added to collection:', data);
+
+            console.log('Supabase response:', { data, error });
+
+            if (error) {
+                console.error('Supabase insert error:', error);
+                throw new Error(error.message || 'Unknown Supabase error');
+            }
+
+            console.log('Item successfully added to collection:', data);
             return data;
         } catch (error) {
-            console.error('Error adding to collection:', error.message);
+            console.error('Error adding to collection:', error.message || error);
             throw error;
         }
     };
-    
 
     return (
         <div className="flex">
@@ -241,6 +256,7 @@ const Map = ({ locations }: { locations: Location[] }) => {
                     <option value="Wicklow">Wicklow</option>
                 </select>
 
+                {/* create a collection submission process */}
                 <h2 className='mt-4 mb-4'> Create a Collection:</h2>
                 <form onSubmit={async (e) => {
                     e.preventDefault();
@@ -273,6 +289,7 @@ const Map = ({ locations }: { locations: Location[] }) => {
                         Create
                     </button>
                 </form>
+
 
                 <h2 className="mt-4 mb-4">Select a collection</h2>
                 <select id="collection-select" value={selectedCollection} onChange={(e) => setSelectedCollection(e.target.value)} className="w-full p-2 border rounded">
