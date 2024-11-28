@@ -27,6 +27,9 @@ const Map = ({ locations }: { locations: Location[] }) => {
     const [selectedFilter, setSelectedFilter] = useState<string>('All');
     const [selectedCounty, setSelectedCounty] = useState<string>('All');
     const [selectedCollection, setSelectedCollection] = useState<string>('');
+    const [collectionMessage, setCollectionMessage] = useState<string | null>(null);
+    const [addToCollectionMessage, setAddToCollectionMessage] = useState<string | null>(null);
+
     interface Collection {
         id: string;
         name: string;
@@ -153,27 +156,31 @@ const Map = ({ locations }: { locations: Location[] }) => {
         }
     }, [locations, selectedFilter, selectedCounty, map, user, selectedCollection]);
 
+    useEffect(() => {
+        if (collectionMessage) {
+            const timer = setTimeout(() => setCollectionMessage(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [collectionMessage]);
+
+    useEffect(() => {
+        if (addToCollectionMessage) {
+            const timer = setTimeout(() => setAddToCollectionMessage(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [addToCollectionMessage]);
+
+
     const handleAddToCollection = async (locationId) => {
         const location = locations.find((loc) => loc.id === locationId);
 
         if (!location) {
             console.error('Location not found');
+            setAddToCollectionMessage('Failed to add location. Location not found.');
             return;
         }
 
         try {
-            console.log('Attempting to insert:', {
-                collection_id: selectedCollection,
-                location_id: locationId,
-                metadata: {
-                    name: location.Name,
-                    address: location.Address,
-                    latitude: location.Latitude,
-                    longitude: location.Longitude,
-                    tags: location.Tags,
-                },
-            });
-
             const { data, error } = await supabase
                 .from('user_collections')
                 .insert({
@@ -188,20 +195,21 @@ const Map = ({ locations }: { locations: Location[] }) => {
                     },
                 });
 
-            console.log('Supabase response:', { data, error });
-
             if (error) {
                 console.error('Supabase insert error:', error);
+                setAddToCollectionMessage('Failed to add location to collection. Please try again.');
                 throw new Error(error.message || 'Unknown Supabase error');
             }
 
             console.log('Item successfully added to collection:', data);
-            return data;
+            setAddToCollectionMessage(`Successfully added "${location.Name}" to the collection.`);
         } catch (error) {
             console.error('Error adding to collection:', error.message || error);
+            setAddToCollectionMessage('Failed to add location to collection. Please try again.');
             throw error;
         }
     };
+
 
     return (
         <div className="flex">
@@ -258,26 +266,39 @@ const Map = ({ locations }: { locations: Location[] }) => {
 
                 {/* create a collection submission process */}
                 <h2 className='mt-4 mb-4'> Create a Collection:</h2>
-                <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.currentTarget);
-                    const collectionName = formData.get('collectionName') as string;
+                <form
+                    onSubmit={async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const collectionName = formData.get('collectionName') as string;
 
-                    if (user && collectionName) {
-                        const { data, error } = await supabase
-                            .from('collections')
-                            .insert([{ name: collectionName, user_id: user.id }]);
+                        if (user && collectionName) {
+                            try {
+                                const { data, error } = await supabase
+                                    .from('collections')
+                                    .insert([{ name: collectionName, user_id: user.id }])
+                                    .select('*'); // Fetch the created collection data
 
-                        if (error) {
-                            console.error('Error creating collection:', error.message);
-                        } else {
-                            console.log('Collection created:', data);
-                            if (data) {
-                                setCollections([...collections, ...data]);
+                                if (error) {
+                                    console.error('Error creating collection:', error.message);
+                                    setCollectionMessage('Failed to create collection. Please try again.');
+                                    return;
+                                }
+
+                                if (data && data.length > 0) {
+                                    const newCollection = data[0];
+                                    setCollections((prevCollections) => [...prevCollections, newCollection]);
+                                    setSelectedCollection(newCollection.id); // Automatically select the new collection
+                                    setCollectionMessage(`Successfully created collection: "${collectionName}".`);
+                                }
+                            } catch (error) {
+                                console.error('Unexpected error:', error);
+                                setCollectionMessage('Failed to create collection. Please try again.');
                             }
                         }
-                    }
-                }}>
+                    }}
+                >
+
                     <input
                         type="text"
                         name="collectionName"
@@ -291,15 +312,31 @@ const Map = ({ locations }: { locations: Location[] }) => {
                 </form>
 
 
-                <h2 className="mt-4 mb-4">Select a collection</h2>
-                <select id="collection-select" value={selectedCollection} onChange={(e) => setSelectedCollection(e.target.value)} className="w-full p-2 border rounded">
-                    <option value="">Select a collection</option>
-                    {collections.map(collection => (
+
+
+                {collectionMessage && (
+                    <p className="text-green-600 mt-2">{collectionMessage}</p>
+                )}
+
+
+
+                <h2 className="mt-4 mb-4">Select a Collection:</h2>
+                <select
+                    id="collection-select"
+                    value={selectedCollection}
+                    onChange={(e) => setSelectedCollection(e.target.value)}
+                    className="w-full p-2 border rounded"
+                >
+                    <option value=""></option>
+                    {collections.map((collection) => (
                         <option key={collection.id} value={collection.id}>
                             {collection.name}
                         </option>
                     ))}
                 </select>
+                {addToCollectionMessage && (
+                    <p className="text-green-600 mt-2">{addToCollectionMessage}</p>
+                )}
             </div>
 
             {/* Map Container */}
