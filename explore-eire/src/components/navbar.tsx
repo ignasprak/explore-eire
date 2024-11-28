@@ -33,9 +33,12 @@ export default function Navbar() {
 
             {/* clickable links */}
             <div className="w-6/12 flex justify-center items-center space-x-8">
-                <Link href="/collections" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Collections</a>
+                {/* uses proper dynamic route syntax */}
+
+                <Link href={`/collections/0c84c7c6-a03a-484e-8daf-79d9aea37557`}>
+                    <a className="text-blue-600 hover:underline"></a>
                 </Link>
+
                 <Link href="/completed-attractions" legacyBehavior>
                     <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Attractions</a>
                 </Link>
