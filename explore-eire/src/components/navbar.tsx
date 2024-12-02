@@ -6,13 +6,14 @@ import logo from '../../public/images/logoedit.png';
 import { useAuth } from '../app/lib/authContext';
 import { supabase } from '../app/lib/supabaseClient';
 
+// navbar component
 export default function Navbar() {
     const { user } = useAuth();
 
     const handleSignOut = async () => {
         const { error } = await supabase.auth.signOut();
         if (error) {
-            console.error("Error signing out:", error.message);
+            console.error("error signing out:", error.message);
         } else {
             localStorage.clear();
             sessionStorage.clear();
@@ -22,50 +23,52 @@ export default function Navbar() {
 
     return (
         <nav className="flex filter drop-shadow-md bg-background px-4 py-4 h-28 items-center relative">
-            {/* the explore eire logo */}
+            {/* logo */}
             <div className="w-3/12 flex items-center">
                 <Link href="/" legacyBehavior>
                     <button>
-                        <Image src={logo} alt="The Explore Eire Logo" layout="fixed" className='m-0 max-w-36' />
+                        <Image src={logo} alt="the explore eire logo" layout="fixed" className='m-0 max-w-36' />
                     </button>
                 </Link>
             </div>
 
-            {/* clickable links */}
+            {/* links */}
             <div className="w-6/12 flex justify-center items-center space-x-8">
-                {/* uses proper dynamic route syntax */}
-
-                <Link href={`/collections/0c84c7c6-a03a-484e-8daf-79d9aea37557`}>
-                    <a className="text-blue-600 hover:underline"></a>
-                </Link>
+                {user && (
+                    <Link href={`/collections/${user.id}`} legacyBehavior>
+                        <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">
+                            collections
+                        </a>
+                    </Link>
+                )}
 
                 <Link href="/completed-attractions" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Attractions</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">attractions</a>
                 </Link>
                 <Link href="/groups" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Groups</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">groups</a>
                 </Link>
                 <Link href="/account-settings" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Settings</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">settings</a>
                 </Link>
             </div>
 
-            {/* menu buttons for user customisation */}
+            {/* user menu */}
             <div className="w-3/12 flex justify-end items-center">
                 {user ? (
                     <>
-                        <span className="mx-4">Welcome, {user.email}</span>
+                        <span className="mx-4">welcome, {user.email}</span>
                         <button onClick={handleSignOut} className="mx-4 text-red-500 hover:underline">
-                            Sign Out
+                            sign out
                         </button>
                     </>
                 ) : (
                     <>
                         <Link href="/register" legacyBehavior>
-                            <a className="mx-4">Register</a>
+                            <a className="mx-4">register</a>
                         </Link>
                         <Link href="/login" legacyBehavior>
-                            <a className="mx-4">Login</a>
+                            <a className="mx-4">login</a>
                         </Link>
                     </>
                 )}
