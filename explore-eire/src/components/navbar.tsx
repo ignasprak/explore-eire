@@ -27,7 +27,13 @@ export default function Navbar() {
             <div className="w-3/12 flex items-center">
                 <Link href="/" legacyBehavior>
                     <button>
-                        <Image src={logo} alt="the explore eire logo" layout="fixed" className='m-0 max-w-36' />
+                        <Image
+                            src={logo}
+                            alt="the explore eire logo"
+                            width={100}
+                            height={100}
+                            className="m-0 max-w-36"
+                        />
                     </button>
                 </Link>
             </div>
