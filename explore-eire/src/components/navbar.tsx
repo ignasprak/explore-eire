@@ -43,19 +43,19 @@ export default function Navbar() {
                 {user && (
                     <Link href={`/collections/${user.id}`} legacyBehavior>
                         <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">
-                            collections
+                            Collections
                         </a>
                     </Link>
                 )}
 
-                <Link href="/completed-attractions" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">attractions</a>
+                <Link href="#" legacyBehavior>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Attractions</a>
                 </Link>
-                <Link href="/groups" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">groups</a>
+                <Link href="#" legacyBehavior>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Groups</a>
                 </Link>
-                <Link href="/account-settings" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">settings</a>
+                <Link href="#" legacyBehavior>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Settings</a>
                 </Link>
             </div>
 
