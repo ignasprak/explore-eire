@@ -1,3 +1,5 @@
+// this is a shortcut to give files access to configured tokens
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;

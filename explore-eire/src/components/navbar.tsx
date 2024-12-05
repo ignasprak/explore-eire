@@ -30,8 +30,8 @@ export default function Navbar() {
                         <Image
                             src={logo}
                             alt="the explore eire logo"
-                            width={100}
-                            height={100}
+                            width={150}
+                            height={150}
                             className="m-0 max-w-36"
                         />
                     </button>
@@ -49,13 +49,13 @@ export default function Navbar() {
                 )}
 
                 <Link href="#" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Attractions</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">!WIP! Attractions</a>
                 </Link>
                 <Link href="#" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Groups</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">!WIP! Groups</a>
                 </Link>
                 <Link href="#" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Settings</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">!WIP! Settings</a>
                 </Link>
             </div>
 
@@ -71,10 +71,10 @@ export default function Navbar() {
                 ) : (
                     <>
                         <Link href="/register" legacyBehavior>
-                            <a className="mx-4">register</a>
+                            <a className="mx-4">Register</a>
                         </Link>
                         <Link href="/login" legacyBehavior>
-                            <a className="mx-4">login</a>
+                            <a className="mx-4">Login</a>
                         </Link>
                     </>
                 )}

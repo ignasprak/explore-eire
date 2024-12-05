@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Navbar from '../../components/navbar';
 
 export default function Register() {
     const [email, setEmail] = useState("");
@@ -23,7 +24,7 @@ export default function Register() {
                 password,
                 options: {
                     data: {
-                        username: username, // Add username to raw_user_meta_data
+                        username: username, // Save the username in user_metadata
                     },
                 },
             });
@@ -32,29 +33,15 @@ export default function Register() {
                 throw new Error(authError.message);
             }
 
-            const user = authData.user;
-
-            if (user) {
-                const { error: dbError } = await supabase.from('users').insert([
-                    {
-                        id: user.id, // UUID from the auth table
-                        email: email,
-                        username: username,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                    },
-                ]);
-
-                if (dbError) {
-                    throw new Error(dbError.message);
-                }
-
-                setSuccess("Registration successful! Redirecting...");
-                setTimeout(() => {
-                    router.push("/login"); // redirect to home page after successful registration
-                }, 2000);
-                
+            if (authData?.user?.email_confirmed_at === null) {
+                setSuccess("Please confirm your account using the link sent to your email.");
+                return;
             }
+
+            setSuccess("Registration successful! Redirecting...");
+            setTimeout(() => {
+                router.push("/login");
+            }, 2000);
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);
@@ -65,62 +52,65 @@ export default function Register() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-primary">
-            <div className="bg-white p-8 rounded shadow-md w-96">
-                <h2 className="text-2xl font-bold mb-6">Register</h2>
-                <form onSubmit={handleRegister}>
-                    <div className="mb-4">
-                        <label className="block text-gray-700">Username:</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                            className="w-full px-4 py-2 border rounded"
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-700">Email:</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="w-full px-4 py-2 border rounded"
-                        />
-                    </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-700">Password:</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className="w-full px-4 py-2 border rounded"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
-                    >
-                        Register
-                    </button>
-                </form>
-                {error && <p className="text-red-500 mt-4">{error}</p>}
-                {success && <p className="text-green-500 mt-4">{success}</p>}
-                <p className="mt-4 text-gray-600 text-center">
-                    Already have an account?{" "}
-                    <a href="/login" className="text-blue-500 hover:underline">
-                        Sign In
-                    </a>
-                </p>
+        <div>
+            <Navbar />
+            <div className="min-h-screen flex items-center justify-center bg-primary">
+                <div className="bg-white p-8 rounded shadow-md w-96">
+                    <h2 className="text-2xl font-bold mb-6">Register</h2>
+                    <form onSubmit={handleRegister}>
+                        <div className="mb-4">
+                            <label className="block text-gray-700">Username:</label>
+                            <input
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                                className="w-full px-4 py-2 border rounded"
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-gray-700">Email:</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className="w-full px-4 py-2 border rounded"
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label className="block text-gray-700">Password:</label>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="w-full px-4 py-2 border rounded"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="w-full bg-primary text-white py-2 rounded hover:bg-green-600"
+                        >
+                            Register
+                        </button>
+                    </form>
+                    {error && <p className="text-red-500 mt-4">{error}</p>}
+                    {success && <p className="text-green-500 mt-4">{success}</p>}
+                    <p className="mt-4 text-gray-600 text-center">
+                        Already have an account?{" "} <br></br>
+                        <a href="/login" className="text-blue-500 hover:underline">
+                            Sign In
+                        </a>
+                    </p>
 
-                <p className="mt-4 text-gray-600 text-center">
-                    Go back?{" "}
-                    <a href="/" className="text-blue-500 hover:underline">
-                        Homepage
-                    </a>
-                </p>
+                    <p className="mt-4 text-gray-600 text-center">
+                        Go back?{" "} <br></br>
+                        <a href="/" className="text-blue-500 hover:underline">
+                            Homepage
+                        </a>
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
 console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
-// initialize supabase client
+// initialise supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL as string,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
@@ -32,6 +32,7 @@ export default async function Home() {
     console.log('fetched locations:', locations);
   }
 
+  // what the user sees
   return (
     <div className="bg-primary font-sans min-h-screen flex flex-col">
 

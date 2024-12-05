@@ -50,10 +50,10 @@ export default function SignIn() {
         // main container for the sign-in page
         <div className="min-h-screen flex items-center justify-center bg-primary">
             <div className="bg-white p-8 rounded shadow-md w-96">
-                <h2 className="text-2xl font-bold mb-6">sign in</h2>
+                <h2 className="text-2xl font-bold mb-6">Sign In</h2>
                 <form onSubmit={handleSignIn}>
                     <div className="mb-4">
-                        <label className="block text-gray-700">email:</label>
+                        <label className="block text-gray-700">Email:</label>
                         <input
                             type="email"
                             value={email}
@@ -63,7 +63,7 @@ export default function SignIn() {
                         />
                     </div>
                     <div className="mb-4">
-                        <label className="block text-gray-700">password:</label>
+                        <label className="block text-gray-700">Password:</label>
                         <input
                             type="password"
                             value={password}
@@ -76,23 +76,23 @@ export default function SignIn() {
                         type="submit"
                         className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600"
                     >
-                        sign in
+                        Sign In
                     </button>
                 </form>
                 {error && <p className="text-red-500 mt-4">{error}</p>}
-                {!isEmailConfirmed && <p className="text-yellow-500 mt-4">please confirm your email before signing in.</p>}
+                {!isEmailConfirmed && <p className="text-yellow-500 mt-4">Please confirm your email before signing in.</p>}
                 {success && <p className="text-green-500 mt-4">{success}</p>}
                 <p className="mt-4 text-gray-600 text-center">
-                    don't have an account?{" "}
+                    Don't have an account?{" "} <br></br>
                     <a href="/register" className="text-blue-500 hover:underline">
-                        register
+                        Register
                     </a>
                 </p>
 
                 <p className="mt-4 text-gray-600 text-center">
-                    go back?{" "}
+                    Go back?{" "} <br></br>
                     <a href="/" className="text-blue-500 hover:underline">
-                        homepage
+                        Homepage
                     </a>
                 </p>
             </div>
