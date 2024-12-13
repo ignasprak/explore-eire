@@ -36,13 +36,15 @@ export default async function Home() {
   return (
     <div className="bg-primary font-sans min-h-screen flex flex-col">
 
+
+
+      {/* map component */}
+
+      <Map locations={locations || []} />
+
       {/* navbar component */}
       <Navbar />
 
-      {/* map component */}
-      <div className="bg-background p-6 w-11/12 rounded-lg mx-auto mb-4 mt-4">
-        <Map locations={locations || []} />
-      </div>
 
     </div>
   );
