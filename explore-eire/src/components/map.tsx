@@ -10,7 +10,6 @@ import TileLayer from "ol/layer/Tile";
 import { OSM } from "ol/source";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
-import { Overlay } from "ol";
 import { fromLonLat } from "ol/proj";
 import { Style, Icon } from "ol/style";
 import Feature from "ol/Feature";
@@ -28,12 +27,45 @@ interface Location {
     Tags: string;
 }
 
-const Map = ({ locations }: { locations: Location[] }) => {
+const Map = () => {
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
     // const popupContainerRef = useRef<HTMLDivElement | null>(null);
     const [map, setMap] = useState<OlMap | null>(null);
     const { user } = useAuth();
+    const [locations, setLocations] = useState<Location[]>([]);
+    const [selectedFilter, setSelectedFilter] = useState<string>("All");
+    const [selectedCounty, setSelectedCounty] = useState<string>("All");
+    const [searchQuery, setSearchQuery] = useState<string>("");
 
+    const fetchLocations = async () => {
+        const queryParams = new URLSearchParams({
+            search: searchQuery,
+            filter: selectedFilter,
+            county: selectedCounty,
+        });
+
+        try {
+            const response = await fetch(`/api/locations?${queryParams.toString()}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error("Error fetching locations:", data.error);
+                setLocations([]);
+            } else {
+                setLocations(data);
+            }
+        } catch (err) {
+            console.error("Unexpected error:", err);
+            setLocations([]);
+        }
+    };
+
+    // fetch new locations on filter change
+    useEffect(() => {
+        fetchLocations();
+    }, [searchQuery, selectedFilter, selectedCounty]);
+
+    // initialise mapbox map
     useEffect(() => {
         if (!mapContainerRef.current) return;
         // if (!mapContainerRef.current || !popupContainerRef.current) return;
@@ -69,6 +101,7 @@ const Map = ({ locations }: { locations: Location[] }) => {
         };
     }, []);
 
+    // update markers on location change
     useEffect(() => {
         if (!map) return;
 
@@ -106,55 +139,91 @@ const Map = ({ locations }: { locations: Location[] }) => {
             vectorSource.addFeature(feature);
         });
 
-        const vectorLayer = new VectorLayer({
-            source: vectorSource,
-        });
-
+        const vectorLayer = new VectorLayer({ source: vectorSource });
         map.addLayer(vectorLayer);
-
-        // Add click event for popups
-        // const handleMapClick = (event: any) => {
-        //     const features = map.getFeaturesAtPixel(event.pixel);
-        //     if (features.length > 0) {
-        //         const feature = features[0];
-        //         const properties = feature.getProperties();
-
-        //         const popupContent = `
-        //   <div>
-        //     <h2 style="font-size: 16px; margin: 0;"><strong>${properties.name}</strong></h2>
-        //     <p style="margin: 5px 0;">County: ${properties.county}</p>
-        //     <p style="margin: 5px 0;">Tags: ${properties.tags}</p>
-        //     <a href="${properties.url}" target="_blank" style="color: blue;">Visit Website</a>
-        //   </div>
-        // `;
-
-        //         if (popupContainerRef.current) {
-        //             popupContainerRef.current.innerHTML = popupContent;
-        //         }
-
-        //         const overlay = map.getOverlayById("popup");
-        //         if (overlay) {
-        //             const coordinates = feature.getGeometry().getCoordinates();
-        //             overlay.setPosition(coordinates);
-        //         }
-        //     } else {
-        //         const overlay = map.getOverlayById("popup");
-        //         if (overlay) {
-        //             overlay.setPosition(undefined);
-        //         }
-        //     }
-        // };
-
-        // map.on("singleclick", handleMapClick);
-
-        // return () => {
-        //     map.un("singleclick", handleMapClick);
-        // };
     }, [map, locations]);
 
+    //
+
+    // Add click event for popups
+    // const handleMapClick = (event: any) => {
+    //     const features = map.getFeaturesAtPixel(event.pixel);
+    //     if (features.length > 0) {
+    //         const feature = features[0];
+    //         const properties = feature.getProperties();
+
+    //         const popupContent = `
+    //   <div>
+    //     <h2 style="font-size: 16px; margin: 0;"><strong>${properties.name}</strong></h2>
+    //     <p style="margin: 5px 0;">County: ${properties.county}</p>
+    //     <p style="margin: 5px 0;">Tags: ${properties.tags}</p>
+    //     <a href="${properties.url}" target="_blank" style="color: blue;">Visit Website</a>
+    //   </div>
+    // `;
+
+    //         if (popupContainerRef.current) {
+    //             popupContainerRef.current.innerHTML = popupContent;
+    //         }
+
+    //         const overlay = map.getOverlayById("popup");
+    //         if (overlay) {
+    //             const coordinates = feature.getGeometry().getCoordinates();
+    //             overlay.setPosition(coordinates);
+    //         }
+    //     } else {
+    //         const overlay = map.getOverlayById("popup");
+    //         if (overlay) {
+    //             overlay.setPosition(undefined);
+    //         }
+    //     }
+    // };
+
+    // map.on("singleclick", handleMapClick);
+
+    // return () => {
+    //     map.un("singleclick", handleMapClick);
+    // };
+    // }, [map, locations]);
+
     return (
-        // width might need to change!!!
+        // width of the map might need to change!!!
         <div className="relative w-[96.75%] h-screen ml-auto">
+            {/* Filter Section */}
+            <div className="absolute top-8 right-4 bg-white p-2 rounded shadow-lg z-50">
+                <label className="block text-sm font-medium text-gray-700">Search:</label>
+                <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                    placeholder="Search by name or address"
+                />
+
+                <label className="block text-sm font-medium text-gray-700 mt-2">Filter by Tag:</label>
+                <select
+                    value={selectedFilter}
+                    onChange={(e) => setSelectedFilter(e.target.value)}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                >
+                    <option value="All">All</option>
+                    <option value="Fishing">Fishing</option>
+                    <option value="Hiking">Hiking</option>
+                    <option value="Beach">Beach</option>
+                    <option value="Food">Food</option>
+                </select>
+
+                <label className="block text-sm font-medium text-gray-700 mt-2">Filter by County:</label>
+                <select
+                    value={selectedCounty}
+                    onChange={(e) => setSelectedCounty(e.target.value)}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                >
+                    <option value="All">All</option>
+                    <option value="Dublin">Dublin</option>
+                    <option value="Cork">Cork</option>
+                </select>
+            </div>
+
             {/* Map Container */}
             <div ref={mapContainerRef} className="w-full h-full" />
 
