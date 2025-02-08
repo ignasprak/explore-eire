@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "ol": "^10.3.1",
+    "remixicon": "^4.6.0",
     "typescript": "^5.7.2"
   }
 }

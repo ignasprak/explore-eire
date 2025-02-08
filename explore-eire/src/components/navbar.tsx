@@ -1,44 +1,59 @@
 "use client";
 
-import Link from "next/link";
-import Image from "next/image";
-import { useAuth } from "../app/lib/authContext";
-import { supabase } from "../app/lib/supabaseClient";
-import logo from "../../public/images/logoedit.png";
+// Indicates that this file is a client-side component
+
+import Link from "next/link"; // Importing Link component from Next.js for navigation
+import Image from "next/image"; // Importing Image component from Next.js for optimized images
+import { useAuth } from "../app/lib/authContext"; // Importing custom hook to get authentication context
+import { supabase } from "../app/lib/supabaseClient"; // Importing Supabase client for authentication
+import logo1 from "../../public/images/newEElogoWsymbol.png"; // Importing logo image
+import logo2 from "../../public/images/newEElogoWOsymbol.png"; // Importing logo image
+import "../app/globals.css";
 
 // Sidebar Component
 export default function Sidebar() {
-    const { user } = useAuth();
+    const { user } = useAuth(); // Getting the current user from authentication context
 
+    // Function to handle sign out
     const handleSignOut = async () => {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await supabase.auth.signOut(); // Signing out the user using Supabase
         if (error) {
-            console.error("error signing out:", error.message);
+            console.error("error signing out:", error.message); // Logging error if sign out fails
         } else {
-            localStorage.clear();
-            sessionStorage.clear();
-            window.location.reload();
+            localStorage.clear(); // Clearing local storage
+            sessionStorage.clear(); // Clearing session storage
+            window.location.reload(); // Reloading the page
         }
     };
 
     return (
         <nav
-            className="group fixed top-0 left-0 h-screen bg-background w-16 hover:w-64 transition-all duration-300 ease-in-out shadow-lg flex flex-col items-center"
+            className="group fixed top-0 left-0 h-screen bg-background w-16 md:hover:w-[300px] transition-all duration-300 ease-in-out shadow-lg flex flex-col items-center"
         >
             {/* Logo */}
-            <div className="mt-6 mb-4">
+            <div className="m-0 mt-2 relative">
                 <Link href="/" legacyBehavior>
                     <button>
+                        {/* Default logo: visible when not hovered */}
                         <Image
-                            src={logo}
-                            alt="the explore eire logo"
+                            src={logo2}
+                            alt="Explore Eire Logo - Default"
                             width={50}
                             height={50}
-                            className="rounded-full"
+                            className="block group-hover:hidden "
+                        />
+                        {/* Hover logo: visible when sidebar is hovered */}
+                        <Image
+                            src={logo1}
+                            alt="Explore Eire Logo - Hover"
+                            width={200}
+                            height={80}
+                            className="hidden group-hover:block m-0"
                         />
                     </button>
                 </Link>
             </div>
+
 
             {/* Links */}
             <div className="flex flex-col space-y-4 mt-8 w-full">
@@ -83,15 +98,16 @@ export default function Sidebar() {
     );
 }
 
+// SidebarItem Component
 function SidebarItem({ href, label, icon }: { href: string; label: string; icon: string }) {
     return (
         <Link href={href} legacyBehavior>
-            <a
-                className="flex items-center space-x-4 text-gray-600 hover:text-gray-900 w-full px-4 py-2 transition-colors duration-300 group"
-            >
-                <span className="text-2xl">{icon}</span>
+            <a className="flex items-center space-x-4 text-gray-600 hover:text-gray-900 w-full px-4 py-2 transition-colors duration-300 group">
+                {/* Using Remix Icon with the icon prop */}
+                <i className={`ri-${icon}-line text-2xl`}></i>
                 <span className="hidden group-hover:block">{label}</span>
             </a>
         </Link>
     );
 }
+

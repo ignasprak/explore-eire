@@ -30,12 +30,13 @@ interface Location {
 
 const Map = ({ locations }: { locations: Location[] }) => {
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
-    const popupContainerRef = useRef<HTMLDivElement | null>(null);
+    // const popupContainerRef = useRef<HTMLDivElement | null>(null);
     const [map, setMap] = useState<OlMap | null>(null);
     const { user } = useAuth();
 
     useEffect(() => {
-        if (!mapContainerRef.current || !popupContainerRef.current) return;
+        if (!mapContainerRef.current) return;
+        // if (!mapContainerRef.current || !popupContainerRef.current) return;
 
         // Initialize the map
         const osmLayer = new TileLayer({
@@ -52,14 +53,14 @@ const Map = ({ locations }: { locations: Location[] }) => {
         });
 
         // Add the popup overlay
-        const popupOverlay = new Overlay({
-            id: "popup", // Ensure the ID is set for future reference
-            element: popupContainerRef.current,
-            autoPan: true,
-            autoPanAnimation: { duration: 250 },
-        });
+        // const popupOverlay = new Overlay({
+        //     id: "popup", // Ensure the ID is set for future reference
+        //     element: popupContainerRef.current,
+        //     autoPan: true,
+        //     autoPanAnimation: { duration: 250 },
+        // });
 
-        mapInstance.addOverlay(popupOverlay);
+        // mapInstance.addOverlay(popupOverlay);
 
         setMap(mapInstance);
 
@@ -92,8 +93,8 @@ const Map = ({ locations }: { locations: Location[] }) => {
             feature.setStyle(
                 new Style({
                     image: new Icon({
-                        src: "images/marker-icon.png", // Replace with your custom marker icon path
-                        scale: 0.1, // Adjust marker size
+                        src: "marker-icon-red.svg", // Replace with your custom marker icon path
+                        scale: 0.03, // Adjust marker size
                         anchor: [0.5, 1], // Anchor at the bottom center of the image
                         anchorXUnits: "fraction", // X anchor as a fraction of the image width
                         anchorYUnits: "fraction", // Y anchor as a fraction of the image height
@@ -112,56 +113,57 @@ const Map = ({ locations }: { locations: Location[] }) => {
         map.addLayer(vectorLayer);
 
         // Add click event for popups
-        const handleMapClick = (event: any) => {
-            const features = map.getFeaturesAtPixel(event.pixel);
-            if (features.length > 0) {
-                const feature = features[0];
-                const properties = feature.getProperties();
+        // const handleMapClick = (event: any) => {
+        //     const features = map.getFeaturesAtPixel(event.pixel);
+        //     if (features.length > 0) {
+        //         const feature = features[0];
+        //         const properties = feature.getProperties();
 
-                const popupContent = `
-          <div>
-            <h2 style="font-size: 16px; margin: 0;"><strong>${properties.name}</strong></h2>
-            <p style="margin: 5px 0;">County: ${properties.county}</p>
-            <p style="margin: 5px 0;">Tags: ${properties.tags}</p>
-            <a href="${properties.url}" target="_blank" style="color: blue;">Visit Website</a>
-          </div>
-        `;
+        //         const popupContent = `
+        //   <div>
+        //     <h2 style="font-size: 16px; margin: 0;"><strong>${properties.name}</strong></h2>
+        //     <p style="margin: 5px 0;">County: ${properties.county}</p>
+        //     <p style="margin: 5px 0;">Tags: ${properties.tags}</p>
+        //     <a href="${properties.url}" target="_blank" style="color: blue;">Visit Website</a>
+        //   </div>
+        // `;
 
-                if (popupContainerRef.current) {
-                    popupContainerRef.current.innerHTML = popupContent;
-                }
+        //         if (popupContainerRef.current) {
+        //             popupContainerRef.current.innerHTML = popupContent;
+        //         }
 
-                const overlay = map.getOverlayById("popup");
-                if (overlay) {
-                    const coordinates = feature.getGeometry().getCoordinates();
-                    overlay.setPosition(coordinates);
-                }
-            } else {
-                const overlay = map.getOverlayById("popup");
-                if (overlay) {
-                    overlay.setPosition(undefined);
-                }
-            }
-        };
+        //         const overlay = map.getOverlayById("popup");
+        //         if (overlay) {
+        //             const coordinates = feature.getGeometry().getCoordinates();
+        //             overlay.setPosition(coordinates);
+        //         }
+        //     } else {
+        //         const overlay = map.getOverlayById("popup");
+        //         if (overlay) {
+        //             overlay.setPosition(undefined);
+        //         }
+        //     }
+        // };
 
-        map.on("singleclick", handleMapClick);
+        // map.on("singleclick", handleMapClick);
 
-        return () => {
-            map.un("singleclick", handleMapClick);
-        };
+        // return () => {
+        //     map.un("singleclick", handleMapClick);
+        // };
     }, [map, locations]);
 
     return (
-        <div className="relative w-full h-screen">
+        // width might need to change!!!
+        <div className="relative w-[96.75%] h-screen ml-auto">
             {/* Map Container */}
             <div ref={mapContainerRef} className="w-full h-full" />
 
             {/* Popup Container */}
-            <div
+            {/* <div
                 ref={popupContainerRef}
                 className="ol-popup bg-white p-2 border border-gray-300 rounded shadow-lg"
                 style={{ position: "absolute", bottom: "10px", left: "10px", zIndex: 1000 }}
-            />
+            /> */}
         </div>
     );
 };

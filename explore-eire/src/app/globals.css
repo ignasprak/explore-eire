@@ -1,7 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-@import 'mapbox-gl/dist/mapbox-gl.css';
+@import "remixicon/fonts/remixicon.css";
 
 :root {
   --background: #ffffff;
