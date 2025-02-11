@@ -3,23 +3,27 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
+  "resolutions": {
+    "source-map-js": "0.7.0"
+  },
   "dependencies": {
     "@supabase/auth-ui-react": "^0.4.7",
     "@supabase/supabase-js": "^2.46.1",
     "install": "^0.13.0",
-    "mapbox-gl": "^3.8.0",
     "next": "15.0.3",
     "npm": "^10.9.1",
-    "react": "19.0.0-rc-66855b96-20241106",
-    "react-dom": "19.0.0-rc-66855b96-20241106"
+    "ol": "^10.4.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "source-map-js": "^1.2.1"
   },
   "devDependencies": {
-    "@types/mapbox-gl": "^3.4.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

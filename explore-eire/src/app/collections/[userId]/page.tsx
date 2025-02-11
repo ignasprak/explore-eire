@@ -3,11 +3,14 @@ import { supabase } from '../../lib/supabaseClient';
 import CollectionsList from './CollectionsList'; // Client Component
 
 export default async function CollectionsPage({ params }: { params: { userId: string } }) {
-    const { userId } = params;
 
-    if (!userId) {
+
+    if (!params?.userId) {
         return <p className="text-red-500">User ID is missing or invalid.</p>;
     }
+
+
+    const { userId } = params;
 
     const { data: collections, error } = await supabase
         .from('collections')
