@@ -76,7 +76,7 @@ export default function CollectionsList({ collections }: { collections: any[] })
                         </button>
                     </div>
                     <p className="text-sm text-gray-500">
-                        Created at: {collection.created_at}
+                        Created on: {collection.created_at}
                     </p>
                     {collection.user_collections?.length > 0 ? (
                         <div className="mt-4">

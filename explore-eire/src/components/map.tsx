@@ -340,7 +340,7 @@ const Map = ({ locations }: { locations: Location[] }) => {
             </div>
 
             {/* Map Container */}
-            <div ref={mapContainerRef} className="map-container w-full h-[56.5rem]" />
+            <div ref={mapContainerRef} className="map-container w-full h-[900px]" />
         </div>
     );
 };

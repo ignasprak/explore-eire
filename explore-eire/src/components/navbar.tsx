@@ -22,7 +22,7 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="flex filter drop-shadow-md bg-background px-4 py-4 h-28 items-center relative">
+        <nav className="flex filter drop-shadow-md bg-background px-4 py-4 h-20 items-center relative">
             {/* logo */}
             <div className="w-3/12 flex items-center">
                 <Link href="/" legacyBehavior>
@@ -40,22 +40,29 @@ export default function Navbar() {
 
             {/* links */}
             <div className="w-6/12 flex justify-center items-center space-x-8">
+                <Link href="/" legacyBehavior>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">
+                        Home
+                    </a>
+                </Link>
                 {user && (
                     <Link href={`/collections/${user.id}`} legacyBehavior>
                         <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">
-                            collections
+                            Collections
                         </a>
                     </Link>
                 )}
 
-                <Link href="/completed-attractions" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">attractions</a>
+                <Link href={`/attractions`} legacyBehavior>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">
+                        Attractions
+                    </a>
                 </Link>
-                <Link href="/groups" legacyBehavior>
+                {/* <Link href="/groups" legacyBehavior>
                     <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">groups</a>
-                </Link>
+                </Link> */}
                 <Link href="/account-settings" legacyBehavior>
-                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">settings</a>
+                    <a className="text-gray-600 transform hover:scale-150 transition-transform duration-150">Settings</a>
                 </Link>
             </div>
 
@@ -63,18 +70,18 @@ export default function Navbar() {
             <div className="w-3/12 flex justify-end items-center">
                 {user ? (
                     <>
-                        <span className="mx-4">welcome, {user.email}</span>
+                        <span className="mx-4">Welcome, {user.email}</span>
                         <button onClick={handleSignOut} className="mx-4 text-red-500 hover:underline">
-                            sign out
+                            Log Out
                         </button>
                     </>
                 ) : (
                     <>
                         <Link href="/register" legacyBehavior>
-                            <a className="mx-4">register</a>
+                            <a className="mx-4">Register</a>
                         </Link>
                         <Link href="/login" legacyBehavior>
-                            <a className="mx-4">login</a>
+                            <a className="mx-4">Login</a>
                         </Link>
                     </>
                 )}
