@@ -38,29 +38,21 @@ export default function AttractionsPage() {
             );
         }
 
-        // ✅ If filtering by category
+        // ✅ If filtering by category (make sure "Tags" is an array column in Supabase)
         if (filter !== "All") {
-            query = query.contains("Tags", [filter]); // Ensure "Tags" is an array column
+            query = query.textSearch("Tags", `"${filter}"`); // Fix for text-based filtering
         }
 
-        // ✅ Pagination
-        const { data, error } = await query.range((pageNum - 1) * pageSize, pageNum * pageSize - 1);
+        // ✅ Fetch without pagination for accurate search results
+        const { data, error } = await query;
 
         if (error) {
             console.error("Error fetching attractions:", error.message);
         } else {
-            if (pageNum === 1) {
-                setAttractions(data); // Reset for new search
-            } else {
-                setAttractions((prev) => [...prev, ...data]); // Append for infinite scroll
-            }
-
-            if (data.length < pageSize) {
-                setHasMore(false);
-            } else {
-                setHasMore(true);
-            }
+            setAttractions(data.slice(0, pageSize)); // ✅ Apply pagination AFTER fetching
+            setHasMore(data.length > pageSize); // ✅ Check if there's more data
         }
+
         setLoading(false);
     };
 
@@ -72,13 +64,14 @@ export default function AttractionsPage() {
     // ✅ Search & Filter Effect (Debounced for better UX)
     useEffect(() => {
         const debouncedFetch = debounce(() => {
-            setPage(1); // Reset pagination when searching
+            setPage(1); // ✅ Reset pagination when searching
             fetchAttractions(searchTerm, selectedFilter, 1);
-        }, 500); // Wait 500ms before sending request
+        }, 500); // ✅ Wait 500ms before sending request
 
         debouncedFetch();
         return () => debouncedFetch.cancel();
     }, [searchTerm, selectedFilter]);
+
 
     // ✅ Handle scrolling (Load more when near bottom)
     useEffect(() => {
