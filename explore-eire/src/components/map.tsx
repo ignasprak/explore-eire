@@ -84,16 +84,6 @@ const Map = () => {
             }),
         });
 
-        // Add the popup overlay
-        // const popupOverlay = new Overlay({
-        //     id: "popup", // Ensure the ID is set for future reference
-        //     element: popupContainerRef.current,
-        //     autoPan: true,
-        //     autoPanAnimation: { duration: 250 },
-        // });
-
-        // mapInstance.addOverlay(popupOverlay);
-
         setMap(mapInstance);
 
         return () => {
@@ -143,50 +133,8 @@ const Map = () => {
         map.addLayer(vectorLayer);
     }, [map, locations]);
 
-    //
-
-    // Add click event for popups
-    // const handleMapClick = (event: any) => {
-    //     const features = map.getFeaturesAtPixel(event.pixel);
-    //     if (features.length > 0) {
-    //         const feature = features[0];
-    //         const properties = feature.getProperties();
-
-    //         const popupContent = `
-    //   <div>
-    //     <h2 style="font-size: 16px; margin: 0;"><strong>${properties.name}</strong></h2>
-    //     <p style="margin: 5px 0;">County: ${properties.county}</p>
-    //     <p style="margin: 5px 0;">Tags: ${properties.tags}</p>
-    //     <a href="${properties.url}" target="_blank" style="color: blue;">Visit Website</a>
-    //   </div>
-    // `;
-
-    //         if (popupContainerRef.current) {
-    //             popupContainerRef.current.innerHTML = popupContent;
-    //         }
-
-    //         const overlay = map.getOverlayById("popup");
-    //         if (overlay) {
-    //             const coordinates = feature.getGeometry().getCoordinates();
-    //             overlay.setPosition(coordinates);
-    //         }
-    //     } else {
-    //         const overlay = map.getOverlayById("popup");
-    //         if (overlay) {
-    //             overlay.setPosition(undefined);
-    //         }
-    //     }
-    // };
-
-    // map.on("singleclick", handleMapClick);
-
-    // return () => {
-    //     map.un("singleclick", handleMapClick);
-    // };
-    // }, [map, locations]);
 
     return (
-        // width of the map might need to change!!!
         <div className="relative w-[96.75%] h-screen ml-auto">
             {/* Filter Section */}
             <div className="absolute top-8 right-4 bg-white p-2 rounded shadow-lg z-50">
@@ -227,14 +175,16 @@ const Map = () => {
             {/* Map Container */}
             <div ref={mapContainerRef} className="w-full h-full" />
 
-            {/* Popup Container */}
-            {/* <div
-                ref={popupContainerRef}
-                className="ol-popup bg-white p-2 border border-gray-300 rounded shadow-lg"
-                style={{ position: "absolute", bottom: "10px", left: "10px", zIndex: 1000 }}
-            /> */}
+            {/* 📌 Floating List View Toggle Button */}
+            <button
+                className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-white shadow-lg border border-gray-300 w-16 h-16 rounded-full flex items-center justify-center hover:bg-gray-200 transition duration-300"
+                onClick={() => console.log("Toggle List View")} //testing purposes
+            >
+                <span className="text-3xl text-gray-700">↑</span>
+            </button>
         </div>
     );
+
 };
 
 export default Map;
