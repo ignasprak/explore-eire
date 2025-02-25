@@ -26,9 +26,11 @@ export default function Sidebar() {
         }
     };
 
+
+
     return (
         <nav
-            className="group fixed top-0 left-0 h-screen bg-background w-16 md:hover:w-[300px] transition-all duration-300 ease-in-out shadow-lg flex flex-col items-center"
+            className="group fixed top-0 left-0 h-screen bg-background w-16 md:hover:w-[300px] transition-all duration-300 ease-in-out shadow-lg flex flex-col items-center z-50"
         >
             {/* Logo */}
             <div className="m-0 mt-2 relative">
@@ -60,13 +62,11 @@ export default function Sidebar() {
                 {user && (
                     <SidebarItem
                         href={`/collections/${user.id}`}
-                        label="Collections"
+                        label="My Collections - WIP"
                         icon="📚"
                     />
                 )}
-                <SidebarItem href="#" label="Attractions" icon="🌄" />
-                <SidebarItem href="#" label="Groups" icon="👥" />
-                <SidebarItem href="#" label="Settings" icon="⚙️" />
+                <SidebarItem href="#" label="Settings" icon="#" />
             </div>
 
             {/* User Menu */}

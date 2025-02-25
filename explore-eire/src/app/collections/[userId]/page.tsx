@@ -2,8 +2,21 @@ import Navbar from '../../../components/navbar';
 import { supabase } from '../../lib/supabaseClient';
 import CollectionsList from './CollectionsList'; // Client Component
 
+export async function generateStaticParams() {
+    const { data: users, error } = await supabase
+        .from('users')
+        .select('id');
+
+    if (error) {
+        console.error('Error fetching users:', error.message);
+        return [];
+    }
+
+    return users?.map((user) => ({ userId: user.id })) ?? [];
+}
+
 export default async function CollectionsPage({ params }: { params: { userId: string } }) {
-    const { userId } = params;
+    const { userId } = await params;
 
     if (!userId) {
         return <p className="text-red-500">User ID is missing or invalid.</p>;

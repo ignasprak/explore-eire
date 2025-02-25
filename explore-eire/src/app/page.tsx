@@ -1,5 +1,3 @@
-// import mapbox css
-import 'mapbox-gl/dist/mapbox-gl.css';
 // import navbar component
 import Navbar from '../components/navbar';
 // import map component
@@ -17,7 +15,8 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 );
 
-export default async function Home() {
+export default async function CollectionsPage({ params }: { params: { userId: string } }) {
+  const userId = params?.userId;
   // fetch data from supabase
   console.log("fetching data from supabase...");
   const { data: locations, error } = await supabase
@@ -39,7 +38,6 @@ export default async function Home() {
 
 
       {/* map component */}
-
       <Map locations={locations || []} />
 
       {/* navbar component */}
