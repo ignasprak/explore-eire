@@ -24,17 +24,89 @@ const Select = dynamic(() => import("react-select"), { ssr: false });
 
 // Options for filters
 const tagOptions = [
-    { value: "All", label: "All" },
-    { value: "Fishing", label: "Fishing" },
-    { value: "Hiking", label: "Hiking" },
+    { value: "Abbeys and Monastery", label: "Abbeys and Monastery" },
+    { value: "Activity", label: "Activity" },
+    { value: "Activity Operator", label: "Activity Operator" },
+    { value: "Adventure Park", label: "Adventure Park" },
+    { value: "Art Gallery", label: "Art Gallery" },
+    { value: "Attraction", label: "Attraction" },
     { value: "Beach", label: "Beach" },
-    { value: "Food", label: "Food" },
+    { value: "Bird Watching", label: "Bird Watching" },
+    { value: "Cafe", label: "Cafe" },
+    { value: "Churches", label: "Churches" },
+    { value: "Cinema", label: "Cinema" },
+    { value: "Climbing", label: "Climbing" },
+    { value: "Comedy", label: "Comedy" },
+    { value: "Craft", label: "Craft" },
+    { value: "Cycling", label: "Cycling" },
+    { value: "Experience", label: "Experience" },
+    { value: "Fine Dining", label: "Fine Dining" },
+    { value: "Fishing", label: "Fishing" },
+    { value: "Food Shops", label: "Food Shops" },
+    { value: "Food and Drink", label: "Food and Drink" },
+    { value: "Forest Park", label: "Forest Park" },
+    { value: "Gardens", label: "Gardens" },
+    { value: "Golf", label: "Golf" },
+    { value: "Historic Houses and Castle", label: "Historic Houses and Castle" },
+    { value: "Horse Riding", label: "Horse Riding" },
+    { value: "Kayaking", label: "Kayaking" },
+    { value: "Kitesurfing", label: "Kitesurfing" },
+    { value: "Learning", label: "Learning" },
+    { value: "Literary Ireland", label: "Literary Ireland" },
+    { value: "Local Produce", label: "Local Produce" },
+    { value: "Museums", label: "Museums" },
+    { value: "Music", label: "Music" },
+    { value: "National Park", label: "National Park" },
+    { value: "Nature and Wildlife", label: "Nature and Wildlife" },
+    { value: "Offshore Island", label: "Offshore Island" },
+    { value: "Park and Forest Walk", label: "Park and Forest Walk" },
+    { value: "Pubs and Bar", label: "Pubs and Bar" },
+    { value: "Restaurant", label: "Restaurant" },
+    { value: "Ruins", label: "Ruins" },
+    { value: "Sailing", label: "Sailing" },
+    { value: "Sculpture", label: "Sculpture" },
+    { value: "Seafood", label: "Seafood" },
+    { value: "Shopping", label: "Shopping" },
+    { value: "Shopping Centres and Department Store", label: "Shopping Centres and Department Store" },
+    { value: "Spa and Wellness", label: "Spa and Wellness" },
+    { value: "Surfing", label: "Surfing" },
+    { value: "Tour", label: "Tour" },
+    { value: "Trails", label: "Trails" },
+    { value: "Venue", label: "Venue" },
+    { value: "Visitor Farm", label: "Visitor Farm" },
+    { value: "Walking", label: "Walking" },
+    { value: "Windsurfing", label: "Windsurfing" },
+    { value: "Zip Lining", label: "Zip Lining" },
+
 ];
 
 const countyOptions = [
-    { value: "All", label: "All" },
-    { value: "Dublin", label: "Dublin" },
+    { value: "Carlow", label: "Carlow" },
+    { value: "Cavan", label: "Cavan" },
+    { value: "Clare", label: "Clare" },
     { value: "Cork", label: "Cork" },
+    { value: "Donegal", label: "Donegal" },
+    { value: "Dublin", label: "Dublin" },
+    { value: "Galway", label: "Galway" },
+    { value: "Kerry", label: "Kerry" },
+    { value: "Kildare", label: "Kildare" },
+    { value: "Kilkenny", label: "Kilkenny" },
+    { value: "Laois", label: "Laois" },
+    { value: "Leitrim", label: "Leitrim" },
+    { value: "Limerick", label: "Limerick" },
+    { value: "Longford", label: "Longford" },
+    { value: "Louth", label: "Louth" },
+    { value: "Mayo", label: "Mayo" },
+    { value: "Meath", label: "Meath" },
+    { value: "Monaghan", label: "Monaghan" },
+    { value: "Offaly", label: "Offaly" },
+    { value: "Roscommon", label: "Roscommon" },
+    { value: "Sligo", label: "Sligo" },
+    { value: "Tipperary", label: "Tipperary" },
+    { value: "Waterford", label: "Waterford" },
+    { value: "Westmeath", label: "Westmeath" },
+    { value: "Wexford", label: "Wexford" },
+    { value: "Wicklow", label: "Wicklow" },
 ];
 
 const customStyles = {
@@ -59,7 +131,7 @@ const Map = () => {
     const { user } = useAuth();
     const [locations, setLocations] = useState<Location[]>([]);
     const [selectedFilters, setSelectedFilters] = useState<{ value: string; label: string }[]>([]);
-    const [selectedCounty, setSelectedCounty] = useState<string>("All");
+    const [selectedCounties, setSelectedCounties] = useState<{ value: string; label: string }[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [dropdownOpenId, setDropdownOpenId] = useState<string | null>(null); // track which attraction’s dropdown is open
     const dropdownRef = useRef<HTMLDivElement | null>(null); //handles clicking outside of collection popup
@@ -77,25 +149,29 @@ const Map = () => {
         try {
             const queryParams = new URLSearchParams({
                 search: searchQuery,
-                filters: selectedFilters.map((filter) => filter.value).join(","), // ✅ Extracts tag values
-                county: selectedCounty,
+                filters: selectedFilters.map(filter => filter.value).join(","),   // Multiple tags
+                counties: selectedCounties.map(county => county.value).join(","), // Multiple counties
             });
 
             const response = await fetch(`/api/locations?${queryParams.toString()}`);
             if (!response.ok) throw new Error("Failed to fetch locations");
 
             const data = await response.json();
-            setLocations(data); // ✅ Updates state with fetched locations
+            setLocations(data); // Update locations on success
         } catch (err) {
             console.error("Error fetching locations:", err);
-            setLocations([]); // Clears locations on error
+            setLocations([]); // Clear locations on error
         }
     };
+
+    useEffect(() => {
+        fetchLocations();
+    }, [searchQuery, selectedFilters, selectedCounties]);
 
 
     useEffect(() => {
         fetchLocations();
-    }, [searchQuery, selectedFilters, selectedCounty]);
+    }, [searchQuery, selectedFilters, selectedCounties]);
 
     // handles clicking outside and inside the collections popup
     useEffect(() => {
@@ -122,7 +198,7 @@ const Map = () => {
     // ✅ Call fetchLocations inside useEffect
     useEffect(() => {
         fetchLocations(); // ✅ This is the correct place to call the async function
-    }, [searchQuery, selectedFilters, selectedCounty]);
+    }, [searchQuery, selectedFilters, selectedCounties]);
 
 
     // Initialize OpenLayers map
@@ -223,12 +299,15 @@ const Map = () => {
                 <label className="block text-sm font-medium text-gray-700 mt-2">Filter by County:</label>
                 <Select
                     options={countyOptions}
-                    value={countyOptions.find(option => option.value === selectedCounty)}
-                    onChange={(option) => setSelectedCounty(option?.value ?? "All")}
+                    value={selectedCounties}
+                    onChange={(options) => setSelectedCounties(options as { value: string; label: string }[])}
                     styles={customStyles}
+                    isMulti
                     isSearchable
-                    placeholder="Select a county..."
+                    placeholder="Select counties..."
+                    closeMenuOnSelect={false}
                 />
+
 
             </div>
 

@@ -5,25 +5,29 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const searchQuery = searchParams.get("search") || "";
-        const filters = searchParams.get("filters") || "";
-        const selectedCounty = searchParams.get("county") || "All";
+        const filters = searchParams.get("filters") || "";   // For tags
+        const counties = searchParams.get("counties") || ""; // For counties
 
         const selectedTags = filters.split(",").filter(tag => tag);
+        const selectedCounties = counties.split(",").filter(county => county);
 
         let query = supabase.from("attractions").select("*");
 
+        // Apply search filter
         if (searchQuery) {
             query = query.ilike("Name", `%${searchQuery}%`);
         }
 
+        // Apply tags filter
         if (selectedTags.length > 0) {
             selectedTags.forEach(tag => {
                 query = query.ilike("Tags", `%${tag}%`);
             });
         }
 
-        if (selectedCounty !== "All") {
-            query = query.eq("County", selectedCounty);
+        // Apply counties filter
+        if (selectedCounties.length > 0) {
+            query = query.in("County", selectedCounties);
         }
 
         const { data, error } = await query;
