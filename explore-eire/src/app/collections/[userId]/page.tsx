@@ -1,6 +1,6 @@
 import Navbar from '../../../components/navbar';
 import { supabase } from '../../lib/supabaseClient';
-import CollectionsList from './CollectionsList'; // Client Component
+import CollectionsList from './CollectionsList';
 
 export async function generateStaticParams() {
     const { data: users, error } = await supabase
@@ -46,7 +46,7 @@ export default async function CollectionsPage({ params }: { params: { userId: st
         return <p className="text-red-500">Failed to load collections.</p>;
     }
 
-    // Format dates as strings server-side
+
     const formattedCollections = collections?.map((collection) => ({
         ...collection,
         created_at: new Date(collection.created_at).toLocaleString('en-US', {

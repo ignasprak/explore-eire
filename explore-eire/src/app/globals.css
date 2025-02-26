@@ -42,32 +42,10 @@ body {
   /* Ensure content doesn't overflow the rounded corners */
 }
 
-/* Move OpenLayers zoom controls to the bottom right */
 .ol-zoom {
-  position: absolute !important;
-  bottom: 30px !important;
-  right: 20px !important;
-  left: auto !important;
-  top: auto !important;
-  /* Override default left positioning */
-  background: transparent !important;
-  /* Ensure no background color */
-  z-index: 1000 !important;
-  /* Ensure it appears above other elements */
-}
-
-/* Style the buttons explicitly */
-.ol-zoom button {
-  background-color: white !important;
-  border: 1px solid #ccc !important;
-  border-radius: 4px !important;
-  width: 30px !important;
-  height: 30px !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-}
-
-/* Ensure hover does not change background */
-.ol-zoom button:hover {
-  background-color: #f0f0f0 !important;
+  bottom: 2rem;
+  right: 1rem;
+  top: auto;
+  left: auto;
+  position: absolute;
 }

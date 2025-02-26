@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import { useAuth } from '@/app/lib/authContext';
-import { Location } from '@/types/location'; // Adjust the path based on your structure
+import { Location } from '@/types/location';
 
 
 export function useCollections() {
@@ -46,28 +46,27 @@ export function useCollections() {
         }
     };
 
-    const createCollection = async (name: string) => {
-        if (!user?.id) {
-            alert('You must be logged in to create a collection.');
-            return;
-        }
-
+    const createCollection = async (collectionName: string, userId: string) => {
         try {
             const { data, error } = await supabase
                 .from('collections')
-                .insert([{ name, user_id: user.id }])
-                .select()
-                .single(); // Get the created collection
+                .insert([{ name: collectionName, user_id: userId }])
+                .select('id')
+                .single();
 
             if (error) throw error;
 
-            alert(`Collection "${data.name}" created successfully!`);
-            fetchUserCollections(); // Refresh collections
-        } catch (err) {
-            console.error('Error creating collection:', err);
+            alert(`Collection "${collectionName}" created successfully!`);
+            fetchUserCollections(); // Refresh the collections list
+
+            return data?.id;
+        } catch (error) {
+            console.error('Error creating collection:', error.message);
             alert('Failed to create collection.');
+            return null;
         }
     };
+
 
 
 
