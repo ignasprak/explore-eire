@@ -46,29 +46,27 @@ export function useCollections() {
         }
     };
 
-    const createCollection = async (collectionName: string, userId: string) => {
-        try {
-            const { data, error } = await supabase
-                .from('collections')
-                .insert([{ name: collectionName, user_id: userId }])
-                .select('id')
-                .single();
+    const createCollection = async (collectionName: string) => {
+        if (!user?.id) {
+            console.error('No user is logged in. Cannot create collection.');
+            alert('You must be logged in to create a collection.');
+            return;
+        }
 
-            if (error) throw error;
+        const { data, error } = await supabase
+            .from('collections')
+            .insert([
+                { name: collectionName, user_id: user.id } // pass user_id here
+            ])
+            .select();
 
-            alert(`Collection "${collectionName}" created successfully!`);
-            fetchUserCollections(); // Refresh the collections list
-
-            return data?.id;
-        } catch (error) {
+        if (error) {
             console.error('Error creating collection:', error.message);
-            alert('Failed to create collection.');
-            return null;
+            alert('Failed to create collection. Please try again.');
+        } else {
+            alert(`Collection "${collectionName}" created successfully!`);
         }
     };
-
-
-
 
     return { collections, addToCollection, fetchUserCollections, createCollection };
 

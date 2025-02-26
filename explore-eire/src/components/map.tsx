@@ -78,6 +78,13 @@ const Map = () => {
         };
     }, []);
 
+    const handleCreateCollection = async () => {
+        const collectionName = prompt('Enter a name for your new collection:');
+        if (!collectionName) return;
+
+        await createCollection(collectionName); // Pass the name to the hook
+    };
+
     // Fetch new locations on filter change
     useEffect(() => {
         fetchLocations();
