@@ -5,7 +5,7 @@ import { useAuth } from "@/app/lib/authContext";
 import { supabase } from "@/app/lib/supabaseClient";
 import { useCollections } from '@/hooks/useCollections';
 import { Location } from '@/types/location'; // Adjust the path based on your structure
-
+import dynamic from "next/dynamic";
 
 // OpenLayers imports
 import "ol/ol.css";
@@ -20,48 +20,82 @@ import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
 import Zoom from "ol/control/Zoom";
 
+const Select = dynamic(() => import("react-select"), { ssr: false });
+
+// Options for filters
+const tagOptions = [
+    { value: "All", label: "All" },
+    { value: "Fishing", label: "Fishing" },
+    { value: "Hiking", label: "Hiking" },
+    { value: "Beach", label: "Beach" },
+    { value: "Food", label: "Food" },
+];
+
+const countyOptions = [
+    { value: "All", label: "All" },
+    { value: "Dublin", label: "Dublin" },
+    { value: "Cork", label: "Cork" },
+];
+
+const customStyles = {
+    control: (provided: any) => ({
+        ...provided,
+        padding: "4px",
+        borderRadius: "0.375rem",
+        borderColor: "#d1d5db",
+        boxShadow: "none",
+        "&:hover": { borderColor: "#9ca3af" },
+    }),
+    menu: (provided: any) => ({
+        ...provided,
+        zIndex: 50, // Ensures dropdown stays above other elements
+    }),
+};
+
+
 const Map = () => {
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
     const [map, setMap] = useState<OlMap | null>(null);
     const { user } = useAuth();
     const [locations, setLocations] = useState<Location[]>([]);
-    const [selectedFilter, setSelectedFilter] = useState<string>("All");
+    const [selectedFilters, setSelectedFilters] = useState<{ value: string; label: string }[]>([]);
     const [selectedCounty, setSelectedCounty] = useState<string>("All");
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [dropdownOpenId, setDropdownOpenId] = useState<string | null>(null); // track which attraction’s dropdown is open
     const dropdownRef = useRef<HTMLDivElement | null>(null); //handles clicking outside of collection popup
     const { collections, addToCollection, createCollection } = useCollections();
     const [newCollectionName, setNewCollectionName] = useState('');
-
-    // List view state
     const [isListOpen, setIsListOpen] = useState<boolean>(false);
 
     const toggleDropdown = (id: string) => {
         setDropdownOpenId((prev) => (prev === id ? null : id)); // Close if open, otherwise open
     };
 
+
+    // Fetch new locations on filter change
     const fetchLocations = async () => {
-        const queryParams = new URLSearchParams({
-            search: searchQuery,
-            filter: selectedFilter,
-            county: selectedCounty,
-        });
-
         try {
-            const response = await fetch(`/api/locations?${queryParams.toString()}`);
-            const data = await response.json();
+            const queryParams = new URLSearchParams({
+                search: searchQuery,
+                filters: selectedFilters.map((filter) => filter.value).join(","), // ✅ Extracts tag values
+                county: selectedCounty,
+            });
 
-            if (!response.ok) {
-                console.error("Error fetching locations:", data.error);
-                setLocations([]);
-            } else {
-                setLocations(data);
-            }
+            const response = await fetch(`/api/locations?${queryParams.toString()}`);
+            if (!response.ok) throw new Error("Failed to fetch locations");
+
+            const data = await response.json();
+            setLocations(data); // ✅ Updates state with fetched locations
         } catch (err) {
-            console.error("Unexpected error:", err);
-            setLocations([]);
+            console.error("Error fetching locations:", err);
+            setLocations([]); // Clears locations on error
         }
     };
+
+
+    useEffect(() => {
+        fetchLocations();
+    }, [searchQuery, selectedFilters, selectedCounty]);
 
     // handles clicking outside and inside the collections popup
     useEffect(() => {
@@ -85,32 +119,27 @@ const Map = () => {
         await createCollection(collectionName); // Pass the name to the hook
     };
 
-    // Fetch new locations on filter change
+    // ✅ Call fetchLocations inside useEffect
     useEffect(() => {
-        fetchLocations();
-    }, [searchQuery, selectedFilter, selectedCounty]);
+        fetchLocations(); // ✅ This is the correct place to call the async function
+    }, [searchQuery, selectedFilters, selectedCounty]);
+
 
     // Initialize OpenLayers map
     useEffect(() => {
         if (!mapContainerRef.current) return;
 
-        const osmLayer = new TileLayer({
-            source: new OSM(),
-        });
-
+        const osmLayer = new TileLayer({ source: new OSM() });
         const mapInstance = new OlMap({
             target: mapContainerRef.current,
             layers: [osmLayer],
             view: new View({
-                center: fromLonLat([-8.24389, 53.41291]), // Center on Ireland
+                center: fromLonLat([-8.24389, 53.41291]),
                 zoom: 7.5,
             }),
         });
 
-        // Zoom controls
-        const zoomControl = new Zoom();
-        mapInstance.addControl(zoomControl);
-
+        mapInstance.addControl(new Zoom());
         setMap(mapInstance);
 
         return () => {
@@ -157,6 +186,7 @@ const Map = () => {
 
         const vectorLayer = new VectorLayer({ source: vectorSource });
         map.addLayer(vectorLayer);
+
     }, [map, locations]);
 
     return (
@@ -178,29 +208,28 @@ const Map = () => {
 
                 {/* Filter by tag */}
                 <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Tag:</label>
-                <select
-                    value={selectedFilter}
-                    onChange={(e) => setSelectedFilter(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
-                >
-                    <option value="All">All</option>
-                    <option value="Fishing">Fishing</option>
-                    <option value="Hiking">Hiking</option>
-                    <option value="Beach">Beach</option>
-                    <option value="Food">Food</option>
-                </select>
+                <Select
+                    options={tagOptions}
+                    value={selectedFilters}
+                    onChange={(selectedOptions) => setSelectedFilters(selectedOptions as { value: string; label: string }[])}
+                    styles={customStyles}
+                    isMulti
+                    isSearchable
+                    placeholder="Select tags..."
+                    closeMenuOnSelect={false}  // Keeps the menu open for faster multiple selections
+                />
 
                 {/* Filter by county */}
                 <label className="block text-sm font-medium text-gray-700 mt-2">Filter by County:</label>
-                <select
-                    value={selectedCounty}
-                    onChange={(e) => setSelectedCounty(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
-                >
-                    <option value="All">All</option>
-                    <option value="Dublin">Dublin</option>
-                    <option value="Cork">Cork</option>
-                </select>
+                <Select
+                    options={countyOptions}
+                    value={countyOptions.find(option => option.value === selectedCounty)}
+                    onChange={(option) => setSelectedCounty(option?.value ?? "All")}
+                    styles={customStyles}
+                    isSearchable
+                    placeholder="Select a county..."
+                />
+
             </div>
 
             {/* Map Container */}
@@ -291,5 +320,6 @@ const Map = () => {
         </div>
     );
 };
+
 
 export default Map;

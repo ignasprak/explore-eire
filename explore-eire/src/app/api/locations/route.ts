@@ -5,22 +5,23 @@ export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
         const searchQuery = searchParams.get("search") || "";
-        const selectedFilter = searchParams.get("filter") || "All";
+        const filters = searchParams.get("filters") || "";
         const selectedCounty = searchParams.get("county") || "All";
+
+        const selectedTags = filters.split(",").filter(tag => tag);
 
         let query = supabase.from("attractions").select("*");
 
-        // Apply search filter
         if (searchQuery) {
             query = query.ilike("Name", `%${searchQuery}%`);
         }
 
-        // Apply category filter
-        if (selectedFilter !== "All") {
-            query = query.ilike("Tags", `%${selectedFilter}%`);
+        if (selectedTags.length > 0) {
+            selectedTags.forEach(tag => {
+                query = query.ilike("Tags", `%${tag}%`);
+            });
         }
 
-        // Apply county filter
         if (selectedCounty !== "All") {
             query = query.eq("County", selectedCounty);
         }
@@ -33,6 +34,7 @@ export async function GET(req: Request) {
 
         return NextResponse.json(data, { status: 200 });
     } catch (err) {
+        console.error("Unexpected error:", err);
         return NextResponse.json({ error: "Unexpected error occurred" }, { status: 500 });
     }
 }
