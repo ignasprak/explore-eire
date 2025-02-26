@@ -33,7 +33,7 @@ const Map = () => {
     const { collections, addToCollection, createCollection } = useCollections();
     const [newCollectionName, setNewCollectionName] = useState('');
 
-    // ✅ List view state
+    // List view state
     const [isListOpen, setIsListOpen] = useState<boolean>(false);
 
     const toggleDropdown = (id: string) => {
@@ -163,7 +163,7 @@ const Map = () => {
         <div className="relative w-[96.75%] h-screen ml-auto">
             {/* Filter section */}
             {/* Floating search box */}
-            <div className="absolute top-4 left-4 bg-white p-3 w-80 shadow-lg rounded-full z-50 flex items-center">
+            <div className="absolute top-4 left-8 bg-white p-3 w-80 shadow-lg rounded-full z-50 flex items-center">
                 <input
                     type="text"
                     value={searchQuery}
@@ -174,8 +174,7 @@ const Map = () => {
             </div>
 
             {/* Filter Box counties + tags */}
-            <div className="absolute top-28 left-4 bg-white p-4 rounded shadow-lg z-40 w-80">
-                <h2 className="text-lg font-semibold mb-2">Filters</h2>
+            <div className="absolute top-28 left-8 bg-white p-4 rounded shadow-lg z-40 w-80">
 
                 {/* Filter by tag */}
                 <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Tag:</label>
@@ -204,7 +203,6 @@ const Map = () => {
                 </select>
             </div>
 
-
             {/* Map Container */}
             <div ref={mapContainerRef} className="w-full h-full" />
 
@@ -218,7 +216,6 @@ const Map = () => {
             >
                 <span className="text-2xl text-gray-600">{isListOpen ? "↓" : "↑"}</span>
             </button>
-
 
             {/* List View Box */}
             <div
@@ -259,7 +256,7 @@ const Map = () => {
                                                     alert('Please enter a collection name.');
                                                 }
                                             }}
-                                            className="w-full mt-2 bg-green-500 text-white py-1 rounded hover:bg-green-600"
+                                            className="w-full mt-2 bg-primary text-white py-1 rounded hover:bg-green-600"
                                         >
                                             Create Collection
                                         </button>
@@ -283,12 +280,6 @@ const Map = () => {
                                     )}
                                 </div>
                             )}
-
-
-
-
-
-
 
                             <p className="text-sm">{location.County}</p>
                             <a href={location.Url} className="text-blue-500 text-sm">View Website</a>
