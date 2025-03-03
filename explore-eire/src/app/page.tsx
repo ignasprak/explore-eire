@@ -35,8 +35,6 @@ export default async function CollectionsPage({ params }: { params: { userId: st
   return (
     <div className="bg-primary font-sans min-h-screen flex flex-col">
 
-
-
       {/* map component */}
       <Map locations={locations || []} />
 

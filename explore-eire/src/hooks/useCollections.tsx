@@ -3,7 +3,6 @@ import { supabase } from '@/app/lib/supabaseClient';
 import { useAuth } from '@/app/lib/authContext';
 import { Location } from '@/types/location';
 
-
 export function useCollections() {
     const { user } = useAuth();
     const [collections, setCollections] = useState<any[]>([]);

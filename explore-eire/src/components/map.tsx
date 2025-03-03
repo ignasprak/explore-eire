@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/lib/authContext";
 import { supabase } from "@/app/lib/supabaseClient";
 import { useCollections } from '@/hooks/useCollections';
-import { Location } from '@/types/location'; // Adjust the path based on your structure
+import { Location } from '@/types/location';
 import dynamic from "next/dynamic";
 
 // OpenLayers imports
@@ -19,11 +19,13 @@ import { Style, Icon } from "ol/style";
 import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
 import Zoom from "ol/control/Zoom";
+import OlSelect from 'ol/interaction/Select.js';
 
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
 // Options for filters
 const tagOptions = [
+    { value: "All", label: "All" },
     { value: "Abbeys and Monastery", label: "Abbeys and Monastery" },
     { value: "Activity", label: "Activity" },
     { value: "Activity Operator", label: "Activity Operator" },
@@ -77,7 +79,6 @@ const tagOptions = [
     { value: "Walking", label: "Walking" },
     { value: "Windsurfing", label: "Windsurfing" },
     { value: "Zip Lining", label: "Zip Lining" },
-
 ];
 
 const countyOptions = [
@@ -120,10 +121,9 @@ const customStyles = {
     }),
     menu: (provided: any) => ({
         ...provided,
-        zIndex: 50, // Ensures dropdown stays above other elements
+        zIndex: 50,
     }),
 };
-
 
 const Map = () => {
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -138,6 +138,8 @@ const Map = () => {
     const { collections, addToCollection, createCollection } = useCollections();
     const [newCollectionName, setNewCollectionName] = useState('');
     const [isListOpen, setIsListOpen] = useState<boolean>(false);
+    const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
+    const [selectedGridId, setSelectedGridId] = useState<string | null>(null);
 
     const toggleDropdown = (id: string) => {
         setDropdownOpenId((prev) => (prev === id ? null : id)); // Close if open, otherwise open
@@ -195,9 +197,9 @@ const Map = () => {
         await createCollection(collectionName); // Pass the name to the hook
     };
 
-    // ✅ Call fetchLocations inside useEffect
+    // Call fetchLocations inside useEffect
     useEffect(() => {
-        fetchLocations(); // ✅ This is the correct place to call the async function
+        fetchLocations(); // This is the correct place to call the async function
     }, [searchQuery, selectedFilters, selectedCounties]);
 
 
@@ -263,7 +265,26 @@ const Map = () => {
         const vectorLayer = new VectorLayer({ source: vectorSource });
         map.addLayer(vectorLayer);
 
-    }, [map, locations]);
+        // Add Select Interaction
+        const selectInteraction = new OlSelect();
+        map.addInteraction(selectInteraction);
+
+        // Handle marker click events
+        selectInteraction.on("select", (event) => {
+            const selectedFeature = event.selected[0];
+            if (selectedFeature) {
+                setSelectedLocation(selectedFeature.getProperties());
+            } else {
+                setSelectedLocation(null);
+            }
+        });
+
+        return () => {
+            map.removeInteraction(selectInteraction);
+        };
+
+
+    }, [map, locations, setSelectedLocation]);
 
     return (
         <div className="relative w-[96.75%] h-screen ml-auto">
@@ -292,7 +313,7 @@ const Map = () => {
                     isMulti
                     isSearchable
                     placeholder="Select tags..."
-                    closeMenuOnSelect={false}  // Keeps the menu open for faster multiple selections
+                    closeMenuOnSelect={false}  // Keeps the menu open
                 />
 
                 {/* Filter by county */}
@@ -308,7 +329,6 @@ const Map = () => {
                     closeMenuOnSelect={false}
                 />
 
-
             </div>
 
             {/* Map Container */}
@@ -319,21 +339,81 @@ const Map = () => {
                 className={`absolute ${isListOpen ? "bottom-1/2" : "bottom-6"} 
                left-1/2 transform -translate-x-1/2 bg-white 
                border border-gray-400 w-14 h-14 rounded-full 
-               flex items-center justify-center z-[1000]`} // Ensure high z-index
+               flex items-center justify-center z-[1000]`}
                 onClick={() => setIsListOpen(!isListOpen)}
             >
                 <span className="text-2xl text-gray-600">{isListOpen ? "↓" : "↑"}</span>
             </button>
+
+            {/* Attraction Sidebar */}
+            {selectedLocation && (
+                <div className="absolute top-4 right-8 h-auto w-1/4 bg-white shadow-md p-4 overflow-y-auto rounded">
+                    <button onClick={() => setSelectedLocation(null)} className="absolute top-2 right-2 text-xl">✖</button>
+
+                    <h2 className="text-lg font-bold mb-2">{selectedLocation.name}</h2>
+
+                    <p className="text-sm text-gray-600">
+                        <strong>Address:</strong> {selectedLocation.address}
+                    </p>
+
+                    <p className="text-sm text-gray-600">
+                        <strong>County:</strong> {selectedLocation.county}
+                    </p>
+
+                    {selectedLocation.telephone && (
+                        <p className="text-sm text-gray-600">
+                            <strong>Phone:</strong> {selectedLocation.telephone}
+                        </p>
+                    )}
+
+                    {selectedLocation.url && (
+                        <p className="text-sm">
+                            <strong>Website:</strong> <a href={selectedLocation.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">{selectedLocation.url}</a>
+                        </p>
+                    )}
+
+                    {selectedLocation.tags && (
+                        <p className="text-sm text-gray-600">
+                            <strong>Tags:</strong> {selectedLocation.tags}
+                        </p>
+                    )}
+                </div>
+            )}
+
 
             {/* List View Box */}
             <div
                 className={`absolute bottom-0 left-0 w-full bg-white shadow-lg transition-all 
                 ${isListOpen ? "h-1/2" : "h-0"} overflow-hidden`}
             >
+                <div
+                    key={location.id}
+                    onClick={() => {
+                        console.log("Clicked location:", location);
+                        setSelectedLocation(location);
+                        setSelectedGridId(location.id);
+                    }}
+                ></div>
                 {/* Grid of Attractions */}
                 <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {locations.map((location) => (
-                        <div key={location.id} className="bg-gray-100 p-3 rounded shadow-md relative">
+                        <div key={location.id}
+                            onClick={() => {
+                                setSelectedLocation({
+                                    name: location.Name,
+                                    address: location.Address,
+                                    county: location.County,
+                                    telephone: location.Telephone,
+                                    url: location.Url,
+                                    tags: location.Tags
+                                });
+
+                                setSelectedGridId(location.id);
+                            }}
+
+                            className={`cursor-pointer p-4 border rounded-lg shadow-md bg-white transition-all duration-300 
+                            ${selectedGridId === location.id ? "border-1 border-blue-600" : "border-gray-300"}`}
+                        >
                             <h3 className="font-semibold">{location.Name}</h3>
                             <button className="absolute top-2 right-12 text-lg text-gray-600 px-2 py-1 rounded hover:bg-gray-200">♡</button>
                             <button
@@ -390,7 +470,6 @@ const Map = () => {
                             )}
 
                             <p className="text-sm">{location.County}</p>
-                            <a href={location.Url} className="text-blue-500 text-sm">View Website</a>
                         </div>
                     ))}
                 </div>
@@ -399,6 +478,5 @@ const Map = () => {
         </div>
     );
 };
-
 
 export default Map;
