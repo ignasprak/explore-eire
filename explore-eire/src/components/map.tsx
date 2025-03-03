@@ -140,11 +140,60 @@ const Map = () => {
     const [isListOpen, setIsListOpen] = useState<boolean>(false);
     const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
     const [selectedGridId, setSelectedGridId] = useState<string | null>(null);
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const [page, setPage] = useState(1);
+    const [loading, setLoading] = useState(false);
+    const [hasMore, setHasMore] = useState(true); // Initially true
+
+
+    const handleScroll = () => {
+        if (!scrollRef.current) return;
+
+        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+
+        // When user reaches bottom, load more data
+        if (scrollTop + clientHeight >= scrollHeight - 10 && !loading) {
+            setLoading(true);
+            loadMoreLocations();
+        }
+    };
+
+    const loadMoreLocations = async () => {
+        if (!hasMore) return; // Stop fetching if no more locations
+
+        try {
+            const queryParams = new URLSearchParams({
+                search: searchQuery,
+                filters: selectedFilters.map(filter => filter.value).join(","),
+                counties: selectedCounties.map(county => county.value).join(","),
+                offset: locations.length.toString(), // Pagination offset
+                limit: "20",
+            });
+
+            const response = await fetch(`/api/locations?${queryParams.toString()}`);
+            if (!response.ok) throw new Error("Failed to fetch more locations");
+
+            const newData = await response.json();
+
+            if (newData.length === 0) {
+                setHasMore(false);
+            } else {
+                // Filter out duplicates using a Set
+                setLocations(prev => {
+                    const existingIds = new Set(prev.map(loc => loc.id)); // Track existing IDs
+                    const filteredData = newData.filter(loc => !existingIds.has(loc.id)); // Remove duplicates
+                    return [...prev, ...filteredData]; // Append only unique items
+                });
+            }
+        } catch (err) {
+            console.error("Error loading more locations:", err);
+        }
+    };
+
 
     const toggleDropdown = (id: string) => {
         setDropdownOpenId((prev) => (prev === id ? null : id)); // Close if open, otherwise open
     };
-
 
     // Fetch new locations on filter change
     const fetchLocations = async () => {
@@ -189,6 +238,18 @@ const Map = () => {
             document.removeEventListener("mousedown", handleClick);
         };
     }, []);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && hasMore) {
+                loadMoreLocations();
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [hasMore]);
+
 
     const handleCreateCollection = async () => {
         const collectionName = prompt('Enter a name for your new collection:');
@@ -336,7 +397,7 @@ const Map = () => {
 
             {/* Floating Toggle Button (List Open/Close) */}
             <button
-                className={`absolute ${isListOpen ? "bottom-1/2" : "bottom-6"} 
+                className={`absolute ${isListOpen ? "bottom-1/3" : "bottom-6"} 
                left-1/2 transform -translate-x-1/2 bg-white 
                border border-gray-400 w-14 h-14 rounded-full 
                flex items-center justify-center z-[1000]`}
@@ -345,59 +406,133 @@ const Map = () => {
                 <span className="text-2xl text-gray-600">{isListOpen ? "↓" : "↑"}</span>
             </button>
 
-            {/* Attraction Sidebar */}
+            {/* Attraction Sidebar (Popup) */}
             {selectedLocation && (
-                <div className="absolute top-4 right-8 h-auto w-1/4 bg-white shadow-md p-4 overflow-y-auto rounded">
-                    <button onClick={() => setSelectedLocation(null)} className="absolute top-2 right-2 text-xl">✖</button>
+                <div className="absolute top-4 right-8 h-auto w-1/3 bg-white shadow-md p-2 overflow-y-auto rounded">
 
-                    <h2 className="text-lg font-bold mb-2">{selectedLocation.name}</h2>
 
-                    <p className="text-sm text-gray-600">
-                        <strong>Address:</strong> {selectedLocation.address}
-                    </p>
+                    {/* Header (Title + Buttons) */}
+                    <div className="flex items-center justify-between space-x-2">
+                        {/* Title Container */}
+                        <div className="flex-1 min-w-0">
+                            <h2
+                                className="text-xl font-bold truncate"
+                                title={selectedLocation.name} // Tooltip to show full title on hover
+                            >
+                                {selectedLocation.name}
+                            </h2>
+                        </div>
 
-                    <p className="text-sm text-gray-600">
-                        <strong>County:</strong> {selectedLocation.county}
-                    </p>
+                        {/* Buttons Container */}
+                        <div className="flex space-x-4 shrink-0">
+                            <button
+                                onClick={() => console.log("Favorited:", selectedLocation.name)}
+                                className="text-gray-600 hover:text-red-500 text-lg"
+                            >
+                                <i className="ri-heart-line text-xl"></i>
+                            </button>
+
+                            <button
+                                onClick={() => toggleDropdown(selectedLocation.id)}
+                                className="text-gray-600 hover:text-blue-500 text-xl"
+                            >
+                                <i className="ri-add-line text-xl"></i>
+                            </button>
+
+                            {/* not needed but used for spacing */}
+                            <button
+                                onClick={() => setSelectedLocation(null)}
+                                className="text-gray-600 hover:text-gray-800 text-xl"
+                            >
+                                <i className="ri-close-large-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Details */}
+                    <p className="text-sm text-gray-600 pt-2"><strong>Address:</strong> {selectedLocation.address}</p>
+                    <p className="text-sm text-gray-600"><strong>County:</strong> {selectedLocation.county}</p>
 
                     {selectedLocation.telephone && (
-                        <p className="text-sm text-gray-600">
-                            <strong>Phone:</strong> {selectedLocation.telephone}
-                        </p>
+                        <p className="text-sm text-gray-600"><strong>Phone:</strong> {selectedLocation.telephone}</p>
                     )}
 
                     {selectedLocation.url && (
-                        <p className="text-sm">
-                            <strong>Website:</strong> <a href={selectedLocation.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">{selectedLocation.url}</a>
+                        <p className="text-sm text-gray-600">
+                            <strong>Website:</strong>
+                            <a href={selectedLocation.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
+                                {selectedLocation.url}
+                            </a>
                         </p>
                     )}
 
                     {selectedLocation.tags && (
-                        <p className="text-sm text-gray-600">
-                            <strong>Tags:</strong> {selectedLocation.tags}
-                        </p>
+                        <p className="text-sm text-gray-600"><strong>Tags:</strong> {selectedLocation.tags}</p>
+                    )}
+
+                    {/* Collection Dropdown (only shows if the button is clicked) */}
+                    {dropdownOpenId === selectedLocation.id && (
+                        <div ref={dropdownRef} className="absolute top-10 right-2 bg-white border rounded shadow-lg z-50 w-56">
+                            <div className="px-4 py-2 border-b">
+                                <input
+                                    type="text"
+                                    value={newCollectionName}
+                                    onChange={(e) => setNewCollectionName(e.target.value)}
+                                    placeholder="New collection name"
+                                    className="w-full p-2 border rounded"
+                                />
+                                <button
+                                    onClick={() => {
+                                        if (newCollectionName.trim()) {
+                                            createCollection(newCollectionName.trim());
+                                            setNewCollectionName('');
+                                            setDropdownOpenId(null);
+                                        } else {
+                                            alert('Please enter a collection name.');
+                                        }
+                                    }}
+                                    className="w-full mt-2 bg-primary text-white py-1 rounded hover:bg-green-600"
+                                >
+                                    Create Collection
+                                </button>
+                            </div>
+
+                            {collections.length > 0 ? (
+                                collections.map((collection) => (
+                                    <button
+                                        key={collection.id}
+                                        onClick={() => {
+                                            addToCollection(collection.id, selectedLocation);
+                                            setDropdownOpenId(null);
+                                        }}
+                                        className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                                    >
+                                        Add to {collection.name}
+                                    </button>
+                                ))
+                            ) : (
+                                <p className="px-4 py-2 text-sm text-gray-500">No collections found.</p>
+                            )}
+                        </div>
                     )}
                 </div>
             )}
 
-
             {/* List View Box */}
             <div
                 className={`absolute bottom-0 left-0 w-full bg-white shadow-lg transition-all 
-                ${isListOpen ? "h-1/2" : "h-0"} overflow-hidden`}
+                ${isListOpen ? "h-1/3" : "h-0"} overflow-hidden`}
             >
-                <div
-                    key={location.id}
-                    onClick={() => {
-                        console.log("Clicked location:", location);
-                        setSelectedLocation(location);
-                        setSelectedGridId(location.id);
-                    }}
-                ></div>
+
                 {/* Grid of Attractions */}
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div
+                    className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-auto h-full"
+                    ref={scrollRef} // Reference for tracking scroll position
+                    onScroll={handleScroll} // Detect scroll
+                >
+
                     {locations.map((location) => (
-                        <div key={location.id}
+                        <div key={location.id ?? location.Name}
                             onClick={() => {
                                 setSelectedLocation({
                                     name: location.Name,
@@ -412,17 +547,18 @@ const Map = () => {
                             }}
 
                             className={`cursor-pointer p-4 border rounded-lg shadow-md bg-white transition-all duration-300 
-                            ${selectedGridId === location.id ? "border-1 border-blue-600" : "border-gray-300"}`}
+                                ${selectedGridId === location.id ? "border-1 border-blue-600" : "border-gray-300"}`}
                         >
                             <h3 className="font-semibold">{location.Name}</h3>
-                            <button className="absolute top-2 right-12 text-lg text-gray-600 px-2 py-1 rounded hover:bg-gray-200">♡</button>
-                            <button
-                                className="absolute top-2 right-2 text-lg text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
-                                title="Add to"
-                                onClick={() => toggleDropdown(location.id)}
-                            >
-                                ➕
-                            </button>
+                            <p className="text-sm">{location.County}</p>
+                            <div
+                                key={location.id}
+                                onClick={() => {
+                                    console.log("Clicked location:", location);
+                                    setSelectedLocation(location);
+                                    setSelectedGridId(location.id);
+                                }}
+                            ></div>
 
                             {dropdownOpenId === location.id && (
                                 <div ref={dropdownRef} className="absolute top-10 right-2 bg-white border rounded shadow-lg z-50 w-56">
