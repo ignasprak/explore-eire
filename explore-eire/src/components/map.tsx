@@ -144,6 +144,8 @@ const Map = () => {
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true); // Initially true
+    const [isCollectionPopupOpen, setIsCollectionPopupOpen] = useState(false);
+
 
 
     const handleScroll = () => {
@@ -426,25 +428,10 @@ const Map = () => {
                         {/* Buttons Container */}
                         <div className="flex space-x-4 shrink-0">
                             <button
-                                onClick={() => console.log("Favorited:", selectedLocation.name)}
-                                className="text-gray-600 hover:text-red-500 text-lg"
-                            >
-                                <i className="ri-heart-line text-xl"></i>
-                            </button>
-
-                            <button
-                                onClick={() => toggleDropdown(selectedLocation.id)}
-                                className="text-gray-600 hover:text-blue-500 text-xl"
-                            >
-                                <i className="ri-add-line text-xl"></i>
-                            </button>
-
-                            {/* not needed but used for spacing */}
-                            <button
                                 onClick={() => setSelectedLocation(null)}
-                                className="text-gray-600 hover:text-gray-800 text-xl"
+                                className="text-gray-600 hover:text-gray-800 bold h-8 w-8 text-xl"
                             >
-                                <i className="ri-close-large-fill"></i>
+                                <i className="ri-close-line"></i>
                             </button>
                         </div>
                     </div>
@@ -470,51 +457,79 @@ const Map = () => {
                         <p className="text-sm text-gray-600"><strong>Tags:</strong> {selectedLocation.tags}</p>
                     )}
 
-                    {/* Collection Dropdown (only shows if the button is clicked) */}
-                    {dropdownOpenId === selectedLocation.id && (
-                        <div ref={dropdownRef} className="absolute top-10 right-2 bg-white border rounded shadow-lg z-50 w-56">
-                            <div className="px-4 py-2 border-b">
-                                <input
-                                    type="text"
-                                    value={newCollectionName}
-                                    onChange={(e) => setNewCollectionName(e.target.value)}
-                                    placeholder="New collection name"
-                                    className="w-full p-2 border rounded"
-                                />
-                                <button
-                                    onClick={() => {
-                                        if (newCollectionName.trim()) {
-                                            createCollection(newCollectionName.trim());
-                                            setNewCollectionName('');
-                                            setDropdownOpenId(null);
-                                        } else {
-                                            alert('Please enter a collection name.');
-                                        }
-                                    }}
-                                    className="w-full mt-2 bg-primary text-white py-1 rounded hover:bg-green-600"
-                                >
-                                    Create Collection
+                    {/* buttons at the bottom */}
+                    <div className="mt-4 flex justify-between">
+                        <button
+                            onClick={() => console.log("Favorited:", selectedLocation.name)}
+                            className="flex-1 bg-gray-200 hover:bg-red-500 text-gray-700 hover:text-white py-2 rounded-lg mr-2"
+                        >
+                            <i className="ri-heart-line text-xl"></i> Favorite
+                        </button>
+
+                        <button
+                            onClick={() => setIsCollectionPopupOpen(true)}
+                            className="flex-1 bg-gray-200 hover:bg-blue-500 text-gray-700 hover:text-white py-2 rounded-lg"
+                        >
+                            <i className="ri-add-line text-xl"></i> Add to Collection
+                        </button>
+
+                    </div>
+                    {/* collection popup (only shows when isCollectionPopupOpen is true) */}
+                    {isCollectionPopupOpen && selectedLocation && (
+                        <div className=" w-auto mt-4 bg-white shadow-lg p-4 rounded border">
+                            <div className="flex justify-between">
+                                <h3 className="text-lg font-bold">Add to Collection</h3>
+                                <button onClick={() => setIsCollectionPopupOpen(false)} className="text-gray-600 hover:text-gray-800">
+                                    <i className="ri-close-line text-xl"></i>
                                 </button>
                             </div>
 
+                            {/* input for new collection */}
+                            <input
+                                type="text"
+                                value={newCollectionName}
+                                onChange={(e) => setNewCollectionName(e.target.value)}
+                                placeholder="New collection name"
+                                className="w-full p-2 border rounded mt-2"
+                            />
+
+                            <button
+                                onClick={() => {
+                                    if (newCollectionName.trim()) {
+                                        createCollection(newCollectionName.trim());
+                                        setNewCollectionName('');
+                                        setIsCollectionPopupOpen(false);
+                                    } else {
+                                        alert('Please enter a collection name.');
+                                    }
+                                }}
+                                className="w-full mt-2 bg-green-500 text-white py-1 rounded hover:bg-green-600"
+                            >
+                                Create Collection
+                            </button>
+
+                            {/* list of existing collections */}
                             {collections.length > 0 ? (
-                                collections.map((collection) => (
-                                    <button
-                                        key={collection.id}
-                                        onClick={() => {
-                                            addToCollection(collection.id, selectedLocation);
-                                            setDropdownOpenId(null);
-                                        }}
-                                        className="w-full text-left px-4 py-2 hover:bg-gray-100"
-                                    >
-                                        Add to {collection.name}
-                                    </button>
-                                ))
+                                <div className="mt-2">
+                                    {collections.map((collection) => (
+                                        <button
+                                            key={collection.id}
+                                            onClick={() => {
+                                                addToCollection(collection.id, selectedLocation);
+                                                setIsCollectionPopupOpen(false);
+                                            }}
+                                            className="w-full text-left px-4 py-2 border-b hover:bg-gray-100"
+                                        >
+                                            {collection.name}
+                                        </button>
+                                    ))}
+                                </div>
                             ) : (
-                                <p className="px-4 py-2 text-sm text-gray-500">No collections found.</p>
+                                <p className="text-sm text-gray-500 mt-2">No collections found.</p>
                             )}
                         </div>
                     )}
+
                 </div>
             )}
 
