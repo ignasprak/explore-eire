@@ -302,6 +302,7 @@ const Map = () => {
         locations.forEach((location) => {
             const feature = new Feature({
                 geometry: new Point(fromLonLat([location.Longitude, location.Latitude])),
+                id: location.id,
                 name: location.Name,
                 url: location.Url,
                 telephone: location.Telephone,
@@ -515,6 +516,10 @@ const Map = () => {
                                         <button
                                             key={collection.id}
                                             onClick={() => {
+                                                if (!selectedLocation) {
+                                                    console.error("Error: selectedLocation is null before adding to collection.");
+                                                    return;
+                                                }
                                                 addToCollection(collection.id, selectedLocation);
                                                 setIsCollectionPopupOpen(false);
                                             }}
@@ -550,12 +555,15 @@ const Map = () => {
                         <div key={location.id ?? location.Name}
                             onClick={() => {
                                 setSelectedLocation({
+                                    id: location.id,
                                     name: location.Name,
                                     address: location.Address,
                                     county: location.County,
                                     telephone: location.Telephone,
                                     url: location.Url,
-                                    tags: location.Tags
+                                    tags: location.Tags,
+                                    latitude: location.Latitude,
+                                    longitude: location.Longitude,
                                 });
 
                                 setSelectedGridId(location.id);
@@ -606,6 +614,8 @@ const Map = () => {
                                             <button
                                                 key={collection.id}
                                                 onClick={() => {
+                                                    console.log("Location before insert 2:", location); // collection debug
+
                                                     addToCollection(collection.id, location);
                                                     setDropdownOpenId(null);
                                                 }}

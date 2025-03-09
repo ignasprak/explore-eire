@@ -23,26 +23,56 @@ export function useCollections() {
     };
 
     const addToCollection = async (collectionId: string, location: Location) => {
+        if (!user?.id) {
+            console.error("No user is logged in.");
+            alert("You must be logged in to add to a collection.");
+            return;
+        }
+
+        if (!location || !location.id) {
+            console.error("Error: Missing location_id", location);
+            alert("Invalid location. Please try again.");
+            return;
+        }
+
         try {
+            console.log("Location before inserting metadata:", location);
+
             const metadata = {
-                name: location.Name,
-                address: location.Address,
-                latitude: location.Latitude,
-                longitude: location.Longitude,
-                tags: location.Tags,
+                name: location.name,
+                address: location.address,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                tags: location.tags,
             };
 
+            console.log("Final metadata being inserted:", metadata);
+
             const { error } = await supabase
-                .from('user_collections')
-                .insert([{ collection_id: collectionId, location_id: location.id, metadata }]);
+                .from("user_collections")
+                .insert([{
+                    collection_id: collectionId,
+                    location_id: location.id,
+                    user_id: user.id,
+                    metadata: metadata,
+                }]);
+
+            if (error) {
+                console.error("Supabase insert error:", error);
+            } else {
+                console.log("Inserted successfully!");
+            }
+
 
             if (error) throw error;
 
-            alert(`Attraction "${metadata.name}" added successfully!`);
+            alert(`"${metadata.name}" added to collection successfully!`);
         } catch (err) {
-            console.error('Error adding attraction:', err);
-            alert('Failed to add attraction.');
+            console.error("Error adding to collection:", err);
+            alert("Failed to add attraction to collection.");
         }
+
+
     };
 
     const createCollection = async (collectionName: string) => {
@@ -68,5 +98,8 @@ export function useCollections() {
     };
 
     return { collections, addToCollection, fetchUserCollections, createCollection };
+
+
+
 
 }

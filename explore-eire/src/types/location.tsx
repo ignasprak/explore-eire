@@ -1,11 +1,11 @@
 export interface Location {
-    Name: string;
+    name: string;
     id: string;
-    Url: string;
-    Telephone: string;
-    Latitude: number;
-    Longitude: number;
-    Address: string;
-    County: string;
-    Tags: string;
+    url: string;
+    telephone: string;
+    latitude: number;
+    longitude: number;
+    address: string;
+    county: string;
+    tags: string;
 }
