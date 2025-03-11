@@ -20,6 +20,8 @@ import Feature from "ol/Feature";
 import Point from "ol/geom/Point";
 import Zoom from "ol/control/Zoom";
 import OlSelect from 'ol/interaction/Select.js';
+import { Fill, Stroke, Text } from "ol/style";
+
 
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
@@ -145,7 +147,19 @@ const Map = () => {
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true); // Initially true
     const [isCollectionPopupOpen, setIsCollectionPopupOpen] = useState(false);
+    const [selectedFeature, setSelectedFeature] = useState<Feature<Point> | null>(null);
 
+
+    const focusOnLocation = (latitude: number, longitude: number) => {
+        if (!map) return;
+
+        const view = map.getView();
+        view.animate({
+            center: fromLonLat([longitude, latitude]),
+            zoom: 12, // Adjust zoom level as needed
+            duration: 1000, // Smooth animation duration (1 second)
+        });
+    };
 
 
     const handleScroll = () => {
@@ -242,6 +256,60 @@ const Map = () => {
     }, []);
 
     useEffect(() => {
+        if (!map) return;
+
+        // Remove previous selection layers
+        const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get('highlight'));
+        existingVectorLayers.forEach(layer => map.removeLayer(layer));
+
+        // Create a new vector source
+        const vectorSource = new VectorSource();
+
+
+        locations.forEach((location) => {
+            const isSelected = selectedLocation && selectedLocation.id === location.id;
+
+            const feature = new Feature({
+                geometry: new Point(fromLonLat([location.Longitude, location.Latitude])),
+                id: location.id,
+                name: location.Name,
+                url: location.Url,
+                telephone: location.Telephone,
+                address: location.Address,
+                tags: location.Tags,
+                county: location.County,
+            });
+
+            feature.setStyle(
+                new Style({
+                    image: new Icon({
+                        src: "marker-icon-red.svg", // Keep the same icon
+                        scale: isSelected ? 0.09 : 0.05, // Make selected marker larger
+                        anchor: [0.5, 1],
+                        anchorXUnits: "fraction",
+                        anchorYUnits: "fraction",
+                        opacity: isSelected ? 1 : 0.8, // Slight opacity change
+                    }),
+                    zIndex: 1000,
+                })
+            );
+
+            vectorSource.addFeature(feature);
+        });
+
+        // Create a new layer for updated markers
+        const vectorLayer = new VectorLayer({
+            source: vectorSource,
+        });
+        vectorLayer.set('highlight', true); // Mark this layer for removal later
+        map.addLayer(vectorLayer);
+
+    }, [map, locations, selectedLocation]); // Re-run when selectedLocation changes
+
+
+
+
+    useEffect(() => {
         const handleScroll = () => {
             if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && hasMore) {
                 loadMoreLocations();
@@ -292,14 +360,17 @@ const Map = () => {
     useEffect(() => {
         if (!map) return;
 
-        // Remove existing vector layers
-        const existingVectorLayers = map.getLayers().getArray().filter((layer) => layer instanceof VectorLayer);
-        existingVectorLayers.forEach((layer) => map.removeLayer(layer));
+        // Remove any old vector layers
+        const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get("highlight"));
+        existingVectorLayers.forEach(layer => map.removeLayer(layer));
 
-        // Create a vector source and layer for the markers
+        // Create vector source for markers
         const vectorSource = new VectorSource();
+        let selectedFeature: Feature<Point> | null = null; // Keep track of selected marker
 
         locations.forEach((location) => {
+            const isSelected = selectedLocation && selectedLocation.id === location.id;
+
             const feature = new Feature({
                 geometry: new Point(fromLonLat([location.Longitude, location.Latitude])),
                 id: location.id,
@@ -311,34 +382,68 @@ const Map = () => {
                 county: location.County,
             });
 
+            // Adjust style based on selection
             feature.setStyle(
                 new Style({
                     image: new Icon({
                         src: "marker-icon-red.svg",
-                        scale: 0.03,
+                        scale: isSelected ? 0.08 : 0.05, // Larger selected marker
                         anchor: [0.5, 1],
                         anchorXUnits: "fraction",
                         anchorYUnits: "fraction",
+                        opacity: isSelected ? 1 : 0.5, // Lower opacity for others
                     }),
+                    text: isSelected
+                        ? new Text({
+                            text: location.Name,
+                            offsetY: -20,
+                            font: "bold 14px Arial",
+                            fill: new Fill({ color: "#000" }),
+                            stroke: new Stroke({ color: "#fff", width: 3 }),
+                        })
+                        : undefined, // Label only for selected
+                    zIndex: isSelected ? 1000 : 1, // Higher z-index for selected marker
                 })
             );
+
+            if (isSelected) {
+                selectedFeature = feature; // Store selected feature
+            }
 
             vectorSource.addFeature(feature);
         });
 
-        const vectorLayer = new VectorLayer({ source: vectorSource });
+        // Create a new layer for updated markers
+        const vectorLayer = new VectorLayer({
+            source: vectorSource,
+            zIndex: 5, // Lower zIndex for all markers
+        });
+
+        vectorLayer.set("highlight", true);
         map.addLayer(vectorLayer);
 
-        // Add Select Interaction
+        // Ensure selected marker is always on top
+        if (selectedFeature) {
+            const highlightLayer = new VectorLayer({
+                source: new VectorSource({ features: [selectedFeature] }),
+                zIndex: 1001, // Highest zIndex to be above all
+            });
+            highlightLayer.set("highlight", true);
+            map.addLayer(highlightLayer);
+        }
+
+        // Marker selection interaction
         const selectInteraction = new OlSelect();
         map.addInteraction(selectInteraction);
 
-        // Handle marker click events
         selectInteraction.on("select", (event) => {
-            const selectedFeature = event.selected[0];
-            if (selectedFeature) {
-                setSelectedLocation(selectedFeature.getProperties());
+            const feature = event.selected[0];
+
+            if (feature) {
+                setSelectedFeature(feature);
+                setSelectedLocation(feature.getProperties());
             } else {
+                setSelectedFeature(null);
                 setSelectedLocation(null);
             }
         });
@@ -346,9 +451,9 @@ const Map = () => {
         return () => {
             map.removeInteraction(selectInteraction);
         };
+    }, [map, locations, selectedLocation]); // Re-run when selectedLocation changes
 
 
-    }, [map, locations, setSelectedLocation]);
 
     return (
         <div className="relative w-[96.75%] h-screen ml-auto">
@@ -477,7 +582,7 @@ const Map = () => {
                     </div>
                     {/* collection popup (only shows when isCollectionPopupOpen is true) */}
                     {isCollectionPopupOpen && selectedLocation && (
-                        <div className=" w-auto mt-4 bg-white shadow-lg p-4 rounded border">
+                        <div className=" w-auto mt-4 bg-white p-4 rounded">
                             <div className="flex justify-between">
                                 <h3 className="text-lg font-bold">Add to Collection</h3>
                                 <button onClick={() => setIsCollectionPopupOpen(false)} className="text-gray-600 hover:text-gray-800">
@@ -567,6 +672,10 @@ const Map = () => {
                                 });
 
                                 setSelectedGridId(location.id);
+
+                                if (location.Latitude && location.Longitude) {
+                                    focusOnLocation(location.Latitude, location.Longitude);
+                                }
                             }}
 
                             className={`cursor-pointer p-4 border rounded-lg shadow-md bg-white transition-all duration-300 
