@@ -156,8 +156,8 @@ const Map = () => {
         const view = map.getView();
         view.animate({
             center: fromLonLat([longitude, latitude]),
-            zoom: 12, // Adjust zoom level as needed
-            duration: 1000, // Smooth animation duration (1 second)
+            zoom: 12.5, // Adjust zoom level as needed
+            duration: 2000, // Smooth animation duration (1 second)
         });
     };
 
@@ -283,16 +283,26 @@ const Map = () => {
             feature.setStyle(
                 new Style({
                     image: new Icon({
-                        src: "marker-icon-red.svg", // Keep the same icon
-                        scale: isSelected ? 0.09 : 0.05, // Make selected marker larger
+                        src: "marker-icon-red.svg", // 📌 Change marker image here
+                        scale: isSelected ? 0.08 : 0.05, // Scale changes for selected marker
                         anchor: [0.5, 1],
                         anchorXUnits: "fraction",
                         anchorYUnits: "fraction",
-                        opacity: isSelected ? 1 : 0.8, // Slight opacity change
+                        opacity: isSelected ? 1 : 0.5, // Reduce opacity for non-selected markers
                     }),
-                    zIndex: 1000,
+                    text: isSelected
+                        ? new Text({
+                            text: location.Name,
+                            offsetY: -20,
+                            font: "bold 14px Arial",
+                            fill: new Fill({ color: "#000" }),
+                            stroke: new Stroke({ color: "#fff", width: 3 }),
+                        })
+                        : undefined, // Only show label for selected markers
+                    zIndex: isSelected ? 1000 : 1, // Ensure selected marker is on top
                 })
             );
+
 
             vectorSource.addFeature(feature);
         });
@@ -305,9 +315,6 @@ const Map = () => {
         map.addLayer(vectorLayer);
 
     }, [map, locations, selectedLocation]); // Re-run when selectedLocation changes
-
-
-
 
     useEffect(() => {
         const handleScroll = () => {
@@ -386,12 +393,11 @@ const Map = () => {
             feature.setStyle(
                 new Style({
                     image: new Icon({
-                        src: "marker-icon-red.svg",
-                        scale: isSelected ? 0.08 : 0.05, // Larger selected marker
+                        src: isSelected ? "marker-icon-red.svg" : "marker-icon-red2.svg",
+                        scale: isSelected ? 0.085 : 0.035, // Larger selected marker
                         anchor: [0.5, 1],
                         anchorXUnits: "fraction",
                         anchorYUnits: "fraction",
-                        opacity: isSelected ? 1 : 0.5, // Lower opacity for others
                     }),
                     text: isSelected
                         ? new Text({
