@@ -27,7 +27,6 @@ const Select = dynamic(() => import("react-select"), { ssr: false });
 
 // Options for filters
 const tagOptions = [
-    { value: "All", label: "All" },
     { value: "Abbeys and Monastery", label: "Abbeys and Monastery" },
     { value: "Activity", label: "Activity" },
     { value: "Activity Operator", label: "Activity Operator" },
@@ -149,14 +148,13 @@ const Map = () => {
     const [isCollectionPopupOpen, setIsCollectionPopupOpen] = useState(false);
     const [selectedFeature, setSelectedFeature] = useState<Feature<Point> | null>(null);
 
-
     const focusOnLocation = (latitude: number, longitude: number) => {
         if (!map) return;
 
         const view = map.getView();
         view.animate({
             center: fromLonLat([longitude, latitude]),
-            zoom: 12.5, // Adjust zoom level as needed
+            zoom: 10, // Adjust zoom level as needed
             duration: 2000, // Smooth animation duration (1 second)
         });
     };
@@ -231,14 +229,50 @@ const Map = () => {
         }
     };
 
+    // !!!!!!!!
+    const fetchAllLocations = async () => {
+        try {
+            const response = await fetch(`/api/locations?limit=5000`); // there is a limit here !!!!!!!
+            if (!response.ok) throw new Error("Failed to fetch all locations");
+
+            const data = await response.json();
+            setLocations(data);
+        } catch (err) {
+            console.error("Error fetching all locations:", err);
+            setLocations([]);
+        }
+    };
+
     useEffect(() => {
-        fetchLocations();
+        if (
+            searchQuery ||
+            (selectedFilters.length > 0 && !selectedFilters.some(filter => filter.value === "All")) ||
+            selectedCounties.length > 0
+        ) {
+            if (selectedFilters.some(filter => filter.value === "All")) {
+                // !!!!!!!
+                fetchAllLocations(); // fetch all attractions if "Show all attractions" is selected
+            } else {
+                fetchLocations(); // fetch filtered locations
+            }
+        } else {
+            setLocations([]); // reset locations if no filters are selected
+        }
     }, [searchQuery, selectedFilters, selectedCounties]);
 
 
     useEffect(() => {
-        fetchLocations();
+        if (
+            searchQuery ||
+            selectedFilters.length > 0 ||
+            selectedCounties.length > 0
+        ) {
+            fetchLocations();
+        } else {
+            setLocations([]); // Clear locations if no filters are applied
+        }
     }, [searchQuery, selectedFilters, selectedCounties]);
+
 
     // handles clicking outside and inside the collections popup
     useEffect(() => {
@@ -256,15 +290,14 @@ const Map = () => {
     }, []);
 
     useEffect(() => {
-        if (!map) return;
+        if (!map || locations.length === 0) return; // 🚀 Don't update markers if no locations
 
         // Remove previous selection layers
-        const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get('highlight'));
+        const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get("highlight"));
         existingVectorLayers.forEach(layer => map.removeLayer(layer));
 
-        // Create a new vector source
         const vectorSource = new VectorSource();
-
+        let selectedFeature: Feature<Point> | null = null;
 
         locations.forEach((location) => {
             const isSelected = selectedLocation && selectedLocation.id === location.id;
@@ -283,12 +316,11 @@ const Map = () => {
             feature.setStyle(
                 new Style({
                     image: new Icon({
-                        src: "marker-icon-red.svg", // 📌 Change marker image here
-                        scale: isSelected ? 0.08 : 0.05, // Scale changes for selected marker
+                        src: isSelected ? "marker-icon-red.svg" : "marker-icon-red2.svg",
+                        scale: isSelected ? 0.085 : 0.035,
                         anchor: [0.5, 1],
                         anchorXUnits: "fraction",
                         anchorYUnits: "fraction",
-                        opacity: isSelected ? 1 : 0.5, // Reduce opacity for non-selected markers
                     }),
                     text: isSelected
                         ? new Text({
@@ -298,23 +330,36 @@ const Map = () => {
                             fill: new Fill({ color: "#000" }),
                             stroke: new Stroke({ color: "#fff", width: 3 }),
                         })
-                        : undefined, // Only show label for selected markers
-                    zIndex: isSelected ? 1000 : 1, // Ensure selected marker is on top
+                        : undefined,
+                    zIndex: isSelected ? 1000 : 1,
                 })
             );
 
+            if (isSelected) {
+                selectedFeature = feature;
+            }
 
             vectorSource.addFeature(feature);
         });
 
-        // Create a new layer for updated markers
         const vectorLayer = new VectorLayer({
             source: vectorSource,
+            zIndex: 5,
         });
-        vectorLayer.set('highlight', true); // Mark this layer for removal later
+
+        vectorLayer.set("highlight", true);
         map.addLayer(vectorLayer);
 
-    }, [map, locations, selectedLocation]); // Re-run when selectedLocation changes
+        if (selectedFeature) {
+            const highlightLayer = new VectorLayer({
+                source: new VectorSource({ features: [selectedFeature] }),
+                zIndex: 1001,
+            });
+            highlightLayer.set("highlight", true);
+            map.addLayer(highlightLayer);
+        }
+    }, [map, locations, selectedLocation]);
+
 
     useEffect(() => {
         const handleScroll = () => {
@@ -654,6 +699,47 @@ const Map = () => {
                 className={`absolute bottom-0 left-0 w-full bg-white shadow-lg transition-all 
                 ${isListOpen ? "h-1/3" : "h-0"} overflow-hidden`}
             >
+                {/* Check if there are any locations */}
+                {locations.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-500 text-lg">
+                        No attractions filtered
+                    </div>
+                ) : (
+                    <div
+                        className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-auto h-full"
+                        ref={scrollRef} // Reference for tracking scroll position
+                        onScroll={handleScroll} // Detect scroll
+                    >
+                        {locations.map((location) => (
+                            <div
+                                key={location.id}
+                                className="cursor-pointer p-4 border rounded-lg shadow-md bg-white transition-all duration-300"
+                                onClick={() => {
+                                    setSelectedLocation({
+                                        id: location.id,
+                                        name: location.Name,
+                                        address: location.Address,
+                                        county: location.County,
+                                        telephone: location.Telephone,
+                                        url: location.Url,
+                                        tags: location.Tags,
+                                        latitude: location.Latitude,
+                                        longitude: location.Longitude,
+                                    });
+
+                                    setSelectedGridId(location.id);
+                                    if (location.Latitude && location.Longitude) {
+                                        focusOnLocation(location.Latitude, location.Longitude);
+                                    }
+                                }}
+                            >
+                                <h3 className="font-semibold">{location.Name}</h3>
+                                <p className="text-sm">{location.County}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
 
                 {/* Grid of Attractions */}
                 <div
@@ -751,7 +837,7 @@ const Map = () => {
                 </div>
             </div>
 
-        </div>
+        </div >
     );
 };
 

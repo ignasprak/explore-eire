@@ -15,28 +15,28 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string
 );
 
-export default async function CollectionsPage({ params }: { params: { userId: string } }) {
-  const userId = params?.userId;
+export default async function CollectionsPage() {
+  // const userId = params?.userId;
   // fetch data from supabase
-  console.log("fetching data from supabase...");
-  const { data: locations, error } = await supabase
-    .from('attractions')
-    .select('Name, id, Url, Telephone, Latitude, Longitude, Address, County, Tags');
+  // console.log("fetching data from supabase...");
+  // const { data: locations, error } = await supabase
+  //   .from('attractions')
+  //   .select('Name, id, Url, Telephone, Latitude, Longitude, Address, County, Tags');
 
-  if (error) {
-    // log error if fetching data fails
-    console.error("error fetching data from supabase:", error.message, error.details, error.hint);
-  } else {
-    // log fetched locations
-    console.log('fetched locations:', locations);
-  }
+  // if (error) {
+  //   // log error if fetching data fails
+  //   console.error("error fetching data from supabase:", error.message, error.details, error.hint);
+  // } else {
+  //   // log fetched locations
+  //   console.log('fetched locations:', locations);
+  // }
 
   // what the user sees
   return (
     <div className="bg-primary font-sans min-h-screen flex flex-col">
 
       {/* map component */}
-      <Map locations={locations || []} />
+      <Map />
 
       {/* navbar component */}
       <Navbar />
