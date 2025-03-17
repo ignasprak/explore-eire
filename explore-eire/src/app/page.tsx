@@ -35,12 +35,11 @@ export default async function CollectionsPage() {
   return (
     <div className="bg-primary font-sans min-h-screen flex flex-col">
 
-      {/* map component */}
-      <Map />
-
       {/* navbar component */}
       <Navbar />
 
+      {/* map component */}
+      <Map />
 
     </div>
   );
