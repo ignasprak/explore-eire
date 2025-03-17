@@ -696,7 +696,7 @@ const Map = () => {
 
             {/* List View Box */}
             <div
-                className={`absolute bottom-0 left-0 w-full bg-white shadow-lg transition-all 
+                className={`absolute bottom-0 right-0 w-[calc(100%-1.12rem)] bg-white shadow-lg transition-all 
                 ${isListOpen ? "h-1/3" : "h-0"} overflow-hidden`}
             >
                 {/* Check if there are any locations */}
