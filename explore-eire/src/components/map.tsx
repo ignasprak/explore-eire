@@ -507,10 +507,10 @@ const Map = () => {
 
 
     return (
-        <div className="relative w-[96.75%] h-screen ml-auto z-10">
+        <div className="relative h-screen ml-auto z-10">
             {/* Filter section */}
             {/* Floating search box */}
-            <div className="absolute top-4 left-8 bg-white p-3 w-80 shadow-lg rounded-full z-50 flex items-center">
+            <div className="absolute top-4 left-24 bg-white p-3 w-80 shadow-lg rounded-full z-50 flex items-center">
                 <input
                     type="text"
                     value={searchQuery}
@@ -521,10 +521,10 @@ const Map = () => {
             </div>
 
             {/* Filter Box counties + tags */}
-            <div className="absolute top-28 left-8 bg-white p-4 rounded shadow-lg z-50 w-80">
+            <div className="absolute top-28 left-24 bg-white p-4 rounded shadow-lg z-50 w-80">
 
                 {/* Filter by tag */}
-                <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Tag:</label>
+                <label className="block text-sm font-medium text-gray-700">Filter by Tag:</label>
                 <Select
                     options={tagOptions}
                     value={selectedFilters}

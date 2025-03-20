@@ -16,31 +16,19 @@ const supabase = createClient(
 );
 
 export default async function CollectionsPage() {
-  // const userId = params?.userId;
-  // fetch data from supabase
-  // console.log("fetching data from supabase...");
-  // const { data: locations, error } = await supabase
-  //   .from('attractions')
-  //   .select('Name, id, Url, Telephone, Latitude, Longitude, Address, County, Tags');
-
-  // if (error) {
-  //   // log error if fetching data fails
-  //   console.error("error fetching data from supabase:", error.message, error.details, error.hint);
-  // } else {
-  //   // log fetched locations
-  //   console.log('fetched locations:', locations);
-  // }
 
   // what the user sees
   return (
-    <div className="bg-primary font-sans min-h-screen flex flex-col">
+    <div className="flex h-screen">
+      {/* Sidebar - Always full height */}
+      <div className="bg-white shadow-lg md:flex flex-col hidden">
+        <Navbar />
+      </div>
 
-      {/* navbar component */}
-      <Navbar />
-
-      {/* map component */}
-      <Map />
-
+      {/* Main Content (Map & UI) */}
+      <div className="flex-1 w-full">
+        <Map />
+      </div>
     </div>
   );
 }

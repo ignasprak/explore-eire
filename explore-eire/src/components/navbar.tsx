@@ -8,15 +8,14 @@ import { supabase } from "../app/lib/supabaseClient";
 import logo2 from "../../public/images/newEElogoWOsymbol.png";
 import "../app/globals.css";
 import { useCollections } from "@/hooks/useCollections";
-import Map from "@/components/map"
-
 
 // Sidebar Component with Collections
-export default function Sidebar() {
+export default function Navbar() {
     const { user } = useAuth();
     const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
     const isCollectionOpen = expandedCollection !== null;
     const { deleteCollection } = useCollections();
+    const [isOpen, setIsOpen] = useState(false);
 
     interface Collection {
         id: string;
@@ -104,6 +103,7 @@ export default function Sidebar() {
 
     return (
         <nav className="fixed top-0 left-0 h-screen bg-background w-20 shadow-lg flex flex-col items-center z-50">
+
             {/* Logo */}
             <div className="h-20 flex items-center justify-center w-full relative">
                 <Link href="/" legacyBehavior>
