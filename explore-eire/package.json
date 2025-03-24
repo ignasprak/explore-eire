@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/auth-ui-react": "^0.4.7",
+    "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.46.1",
     "install": "^0.13.0",
     "mapbox-gl": "^3.8.0",

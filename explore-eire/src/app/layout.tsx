@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "./lib/authContext";
 import Sidebar from "@/components/navbar";
 import { MapProvider } from '@/context/MapContext';
+import { CollectionsProvider } from "@/context/CollectionsContext";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -36,25 +37,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <AuthProvider>
           <MapProvider>
-            <div className="relative flex">
-              {/* Sidebar + Overlay Wrapper */}
-              <div className="group relative z-50">
-                <Sidebar />
+            <CollectionsProvider>
+              <div className="relative flex">
+                {/* Sidebar + Overlay Wrapper */}
+                <div className="group relative z-50">
+                  <Sidebar />
 
-                {/* Dimmed Overlay */}
-                <div
-                  className="
+                  {/* Dimmed Overlay */}
+                  <div
+                    className="
                   fixed inset-0 bg-black 
                   opacity-0 group-hover:opacity-30 
                   transition-opacity duration-300 
                   pointer-events-none z-40
                 "
-                ></div>
-              </div>
+                  ></div>
+                </div>
 
-              {/* Main Content */}
-              <main className="flex-1 z-10">{children}</main>
-            </div>
+                {/* Main Content */}
+                <main className="flex-1 z-10">{children}</main>
+              </div>
+            </CollectionsProvider>
           </MapProvider>
         </AuthProvider>
       </body>

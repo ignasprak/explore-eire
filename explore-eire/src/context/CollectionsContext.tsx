@@ -1,0 +1,129 @@
+"use client";
+
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/app/lib/supabaseClient";
+import { useAuth } from "@/app/lib/authContext";
+import { Location } from "@/types/location";
+
+export interface Collection {
+    id: string;
+    name: string;
+    user_id: string;
+    user_collections?: any[]; // You can type this better later
+}
+
+interface CollectionsContextType {
+    collections: Collection[];
+    fetchCollections: () => Promise<void>;
+    createCollection: (name: string) => Promise<void>;
+    deleteCollection: (id: string) => Promise<void>;
+    addToCollection: (collectionId: string, location: Location) => Promise<void>;
+}
+
+const CollectionsContext = createContext<CollectionsContextType | undefined>(undefined);
+
+export const useCollectionsContext = () => {
+    const context = useContext(CollectionsContext);
+    if (!context) {
+        throw new Error("useCollectionsContext must be used inside CollectionsProvider");
+    }
+    return context;
+};
+
+export function CollectionsProvider({ children }: { children: ReactNode }) {
+    const { user } = useAuth();
+    const [collections, setCollections] = useState<Collection[]>([]);
+
+    useEffect(() => {
+        fetchCollections();
+
+        const interval = setInterval(() => {
+            fetchCollections();
+        }, 3000); // every 3 seconds
+
+        return () => clearInterval(interval);
+    }, [user?.id]);
+
+
+    const fetchCollections = async () => {
+        if (!user?.id) return;
+        const { data, error } = await supabase
+            .from("collections")
+            .select(`
+                id, name, user_id,
+                user_collections (
+                    location_id,
+                    attractions (
+                        id, Name, Address, Url, Telephone, Latitude, Longitude, County, Tags
+                    )
+                )
+            `)
+            .eq("user_id", user.id);
+
+        if (error) console.error("Error fetching collections:", error.message);
+        else setCollections(data || []);
+    };
+
+
+    const createCollection = async (name: string) => {
+        if (!user?.id) return;
+
+        const tempId = Date.now().toString();
+        const tempCollection = { id: tempId, name, user_id: user.id };
+        setCollections((prev) => [...prev, tempCollection]); // optimistic update
+
+        const { data, error } = await supabase
+            .from("collections")
+            .insert([{ name, user_id: user.id }])
+            .select();
+
+        if (error) {
+            console.error("Error creating collection:", error.message);
+            setCollections((prev) => prev.filter((c) => c.id !== tempId));
+        } else {
+            setCollections((prev) =>
+                prev.map((c) => (c.id === tempId ? data[0] : c))
+            );
+        }
+    };
+
+    const deleteCollection = async (id: string) => {
+        const { error } = await supabase.from("collections").delete().eq("id", id);
+        if (error) {
+            console.error("Error deleting collection:", error.message);
+        } else {
+            setCollections((prev) => prev.filter((c) => c.id !== id));
+        }
+    };
+
+    const addToCollection = async (collectionId: string, location: Location) => {
+        if (!user?.id) return;
+
+        const newEntry = {
+            collection_id: collectionId,
+            location_id: location.id,
+            user_id: user.id,
+            metadata: {
+                name: location.name,
+                address: location.address,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                tags: location.tags,
+            },
+        };
+
+        const { error } = await supabase.from("user_collections").insert([newEntry]);
+
+        if (error) {
+            console.error("Error adding to collection:", error.message);
+        }
+    };
+
+    return (
+        <CollectionsContext.Provider
+            value={{ collections, fetchCollections, createCollection, deleteCollection, addToCollection }}
+        >
+            {children}
+        </CollectionsContext.Provider>
+    );
+}
