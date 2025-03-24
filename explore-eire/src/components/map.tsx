@@ -22,7 +22,6 @@ import Zoom from "ol/control/Zoom";
 import OlSelect from 'ol/interaction/Select.js';
 import { Fill, Stroke, Text } from "ol/style";
 
-
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
 // Options for filters
@@ -259,7 +258,6 @@ const Map = () => {
             setLocations([]); // reset locations if no filters are selected
         }
     }, [searchQuery, selectedFilters, selectedCounties]);
-
 
     useEffect(() => {
         if (
@@ -696,7 +694,7 @@ const Map = () => {
 
             {/* List View Box */}
             <div
-                className={`absolute bottom-0 left-0 w-full bg-white shadow-lg transition-all 
+                className={`absolute bottom-0 left-20 w-[96%] bg-white shadow-lg transition-all 
                 ${isListOpen ? "h-1/3" : "h-0"} overflow-hidden`}
             >
                 {/* Check if there are any locations */}
