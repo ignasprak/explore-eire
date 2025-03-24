@@ -8,6 +8,7 @@ import { supabase } from "../app/lib/supabaseClient";
 import logo2 from "../../public/images/newEElogoWOsymbol.png";
 import "../app/globals.css";
 import { useCollections } from "@/hooks/useCollections";
+import { useMap } from '@/context/MapContext';
 
 // Sidebar Component with Collections
 export default function Navbar() {
@@ -16,6 +17,7 @@ export default function Navbar() {
     const isCollectionOpen = expandedCollection !== null;
     const { deleteCollection } = useCollections();
     const [isOpen, setIsOpen] = useState(false);
+    const { setLocations } = useMap();
 
     interface Collection {
         id: string;
@@ -40,7 +42,7 @@ export default function Navbar() {
                 user_collections (
                     location_id,
                     attractions (
-                        id, Name, Address, Url, Telephone
+                        id, Name, Address, Url, Telephone, Latitude, Longitude, County, Tags
                     )
                 )
             `)
@@ -54,8 +56,41 @@ export default function Navbar() {
     };
 
     const handleCollectionClick = (collectionId: string) => {
-        setExpandedCollection(expandedCollection === collectionId ? null : collectionId);
+        const isSame = expandedCollection === collectionId;
+
+        // Toggle open/close
+        setExpandedCollection(isSame ? null : collectionId);
+
+        if (isSame) {
+            setLocations([]); // Clear the map if closing the panel
+            return;
+        }
+
+        const selectedCollection = collections.find((c) => c.id === collectionId);
+
+        if (!selectedCollection) return;
+
+        const attractions = selectedCollection.user_collections
+            .map((uc) => uc.attractions)
+            .filter(Boolean) // remove null/undefined
+            .map((a) => ({
+                id: a.id,
+                Name: a.Name,
+                Address: a.Address,
+                County: a.County ?? '',
+                Telephone: a.Telephone ?? '',
+                Url: a.Url ?? '',
+                Tags: a.Tags ?? '',
+                Latitude: a.Latitude,
+                Longitude: a.Longitude,
+            }));
+
+        console.log("Set collection attractions to map:", attractions);
+        setLocations(attractions);
     };
+
+
+
 
     const handleSignOut = async () => {
         const { error } = await supabase.auth.signOut();

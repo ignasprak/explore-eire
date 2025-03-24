@@ -6,6 +6,7 @@ import { supabase } from "@/app/lib/supabaseClient";
 import { useCollections } from '@/hooks/useCollections';
 import { Location } from '@/types/location';
 import dynamic from "next/dynamic";
+import { useMap } from '@/context/MapContext';
 
 // OpenLayers imports
 import "ol/ol.css";
@@ -129,7 +130,7 @@ const Map = () => {
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
     const [map, setMap] = useState<OlMap | null>(null);
     const { user } = useAuth();
-    const [locations, setLocations] = useState<Location[]>([]);
+    const { locations, setLocations } = useMap();
     const [selectedFilters, setSelectedFilters] = useState<{ value: string; label: string }[]>([]);
     const [selectedCounties, setSelectedCounties] = useState<{ value: string; label: string }[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
@@ -146,6 +147,7 @@ const Map = () => {
     const [hasMore, setHasMore] = useState(true); // Initially true
     const [isCollectionPopupOpen, setIsCollectionPopupOpen] = useState(false);
     const [selectedFeature, setSelectedFeature] = useState<Feature<Point> | null>(null);
+
 
     const focusOnLocation = (latitude: number, longitude: number) => {
         if (!map) return;
@@ -288,9 +290,13 @@ const Map = () => {
     }, []);
 
     useEffect(() => {
-        if (!map || locations.length === 0) return; // 🚀 Don't update markers if no locations
+        if (!map || locations.length === 0) return;
 
-        // Remove previous selection layers
+        console.log("Marker render effect triggered");
+        console.log("Map is ready:", map);
+        console.log("Locations:", locations);
+
+        // Remove previous vector layers
         const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get("highlight"));
         existingVectorLayers.forEach(layer => map.removeLayer(layer));
 
@@ -301,14 +307,14 @@ const Map = () => {
             const isSelected = selectedLocation && selectedLocation.id === location.id;
 
             const feature = new Feature({
-                geometry: new Point(fromLonLat([location.Longitude, location.Latitude])),
+                geometry: new Point(fromLonLat([location.longitude, location.latitude])),
                 id: location.id,
-                name: location.Name,
-                url: location.Url,
-                telephone: location.Telephone,
-                address: location.Address,
-                tags: location.Tags,
-                county: location.County,
+                name: location.name,
+                url: location.url,
+                telephone: location.telephone,
+                address: location.address,
+                tags: location.tags,
+                county: location.county,
             });
 
             feature.setStyle(
@@ -322,7 +328,7 @@ const Map = () => {
                     }),
                     text: isSelected
                         ? new Text({
-                            text: location.Name,
+                            text: location.name,
                             offsetY: -20,
                             font: "bold 14px Arial",
                             fill: new Fill({ color: "#000" }),
@@ -356,7 +362,8 @@ const Map = () => {
             highlightLayer.set("highlight", true);
             map.addLayer(highlightLayer);
         }
-    }, [map, locations, selectedLocation]);
+
+    }, [map, locations]);
 
 
     useEffect(() => {
