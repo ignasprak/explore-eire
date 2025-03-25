@@ -14,7 +14,7 @@ export interface Collection {
 
 interface CollectionsContextType {
     collections: Collection[];
-    fetchCollections: () => Promise<void>;
+    refetchCollections: () => Promise<void>;
     createCollection: (name: string) => Promise<void>;
     deleteCollection: (id: string) => Promise<void>;
     addToCollection: (collectionId: string, location: Location) => Promise<void>;
@@ -30,22 +30,24 @@ export const useCollectionsContext = () => {
     return context;
 };
 
+
 export function CollectionsProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const [collections, setCollections] = useState<Collection[]>([]);
 
     useEffect(() => {
-        fetchCollections();
+        refetchCollections();
 
+        //update timer
         const interval = setInterval(() => {
-            fetchCollections();
+            refetchCollections();
         }, 3000); // every 3 seconds
 
         return () => clearInterval(interval);
     }, [user?.id]);
 
 
-    const fetchCollections = async () => {
+    const refetchCollections = async () => {
         if (!user?.id) return;
         const { data, error } = await supabase
             .from("collections")
@@ -65,27 +67,40 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
     };
 
 
-    const createCollection = async (name: string) => {
+    const createCollection = async (name: string, location?: Location) => {
         if (!user?.id) return;
-
-        const tempId = Date.now().toString();
-        const tempCollection = { id: tempId, name, user_id: user.id };
-        setCollections((prev) => [...prev, tempCollection]); // optimistic update
 
         const { data, error } = await supabase
             .from("collections")
             .insert([{ name, user_id: user.id }])
-            .select();
+            .select()
+            .single();
 
-        if (error) {
-            console.error("Error creating collection:", error.message);
-            setCollections((prev) => prev.filter((c) => c.id !== tempId));
-        } else {
-            setCollections((prev) =>
-                prev.map((c) => (c.id === tempId ? data[0] : c))
-            );
+        if (error || !data) {
+            console.error("Error creating collection:", error?.message);
+            return;
         }
+
+        // If a location is provided, add it to the collection
+        if (location) {
+            const { error: addError } = await supabase.from("user_collections").insert([
+                {
+                    collection_id: data.id,
+                    location_id: location.id,
+                    user_id: user.id,
+                },
+            ]);
+
+            if (addError) {
+                console.error("Error adding initial location to collection:", addError.message);
+            }
+        }
+
+        // Optionally refetch or update state here
+        refetchCollections?.();
     };
+
+
 
     const deleteCollection = async (id: string) => {
         const { error } = await supabase.from("collections").delete().eq("id", id);
@@ -121,7 +136,7 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
 
     return (
         <CollectionsContext.Provider
-            value={{ collections, fetchCollections, createCollection, deleteCollection, addToCollection }}
+            value={{ collections, refetchCollections, createCollection, deleteCollection, addToCollection }}
         >
             {children}
         </CollectionsContext.Provider>

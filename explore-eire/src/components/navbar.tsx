@@ -17,7 +17,7 @@ export default function Navbar() {
     const isCollectionOpen = expandedCollection !== null;
     const [isOpen, setIsOpen] = useState(false);
     const { setLocations } = useMap();
-    const { collections, refetchCollections } = useCollectionsContext();
+    const { collections, refetchCollections, deleteCollection } = useCollectionsContext();
 
     const handleCollectionClick = (collectionId: string) => {
         const isSame = expandedCollection === collectionId;
@@ -138,7 +138,10 @@ export default function Navbar() {
 
                             console.log("deleting collection with id:", expandedCollection);
                             await deleteCollection(expandedCollection);
+                            setExpandedCollection(null); // collapses the view
+                            setLocations([]); // clear map markers
                             await refetchCollections();
+
                         }}
 
                         className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"

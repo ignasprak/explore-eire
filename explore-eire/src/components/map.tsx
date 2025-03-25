@@ -7,6 +7,7 @@ import { useCollections } from '@/hooks/useCollections';
 import { Location } from '@/types/location';
 import dynamic from "next/dynamic";
 import { useMap } from '@/context/MapContext';
+import { useCollectionsContext } from "@/context/CollectionsContext";
 
 // OpenLayers imports
 import "ol/ol.css";
@@ -135,8 +136,7 @@ const Map = () => {
     const [selectedCounties, setSelectedCounties] = useState<{ value: string; label: string }[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [dropdownOpenId, setDropdownOpenId] = useState<string | null>(null); // track which attraction’s dropdown is open
-    const dropdownRef = useRef<HTMLDivElement | null>(null); //handles clicking outside of collection popup
-    const { collections, addToCollection, createCollection } = useCollections();
+    const dropdownRef = useRef<HTMLDivElement | null>(null); //handles clicking outside of collection popup    
     const [newCollectionName, setNewCollectionName] = useState('');
     const [isListOpen, setIsListOpen] = useState<boolean>(false);
     const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
@@ -147,7 +147,7 @@ const Map = () => {
     const [hasMore, setHasMore] = useState(true); // Initially true
     const [isCollectionPopupOpen, setIsCollectionPopupOpen] = useState(false);
     const [selectedFeature, setSelectedFeature] = useState<Feature<Point> | null>(null);
-
+    const { createCollection, addToCollection, collections, deleteCollection } = useCollectionsContext();
 
     const focusOnLocation = (latitude: number, longitude: number) => {
         if (!map) return;
@@ -656,15 +656,16 @@ const Map = () => {
                             />
 
                             <button
-                                onClick={() => {
+                                onClick={async () => {
                                     if (newCollectionName.trim()) {
-                                        createCollection(newCollectionName.trim());
+                                        await createCollection(newCollectionName.trim(), selectedLocation);
                                         setNewCollectionName('');
                                         setIsCollectionPopupOpen(false);
                                     } else {
                                         alert('Please enter a collection name.');
                                     }
                                 }}
+
                                 className="w-full mt-2 bg-green-500 text-white py-1 rounded hover:bg-green-600"
                             >
                                 Create Collection
