@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary-color: #83b271;
+  --secondary-color: #111111;
+  --tertiary-color: #ffffff;
+  --accent-color: #a0c492;
+  --highlight-color: #689c54;
+  --dark-color: #2a2a2a;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* text */
+p {
+  font-size: 1vw;
+}
+
+h1 {
+  font-size: 3vw;
+}
+
+html,
+body {
+  background-color: var(--primary-color);
+}
+
+/* Map container styles */
+.map-container {
+  border-radius: 15px;
+  /* Add rounded corners */
+  overflow: hidden;
+  /* Ensure content doesn't overflow the rounded corners */
+}
+
+.ol-zoom {
+  bottom: 2rem;
+  right: 1rem;
+  top: auto;
+  left: auto;
+  position: absolute;
+}
