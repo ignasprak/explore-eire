@@ -42,16 +42,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {/* Sidebar + Overlay Wrapper */}
                 <div className="group relative z-50">
                   <Sidebar />
-
-                  {/* Dimmed Overlay */}
-                  <div
-                    className="
-                  fixed inset-0 bg-black 
-                  opacity-0 group-hover:opacity-30 
-                  transition-opacity duration-300 
-                  pointer-events-none z-40
-                "
-                  ></div>
                 </div>
 
                 {/* Main Content */}

@@ -277,8 +277,7 @@ function SidebarItem({ href, label, icon }: { href: string; label: string; icon:
         <Link href={href} legacyBehavior>
             <a className="flex flex-col items-center justify-center w-full py-2 text-gray-600 hover:text-gray-900 transition-all duration-300">
                 <i className={`${icon} text-2xl`}></i>
-
-                <span className="ml-4 opacity-0">
+                <span>
                     {label}
                 </span>
             </a>
