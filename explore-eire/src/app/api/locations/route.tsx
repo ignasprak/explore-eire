@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { supabase } from '../../lib/supabaseClient';
 
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
         // Apply tags filter
         if (selectedTags.length > 0) {
             selectedTags.forEach(tag => {
-                query = query.ilike("Tags", `%${tag}%`);
+                query = query.ilike("Tags", `%${selectedTags}%`);
             });
         }
 

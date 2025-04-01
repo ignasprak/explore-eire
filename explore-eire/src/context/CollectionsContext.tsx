@@ -49,22 +49,30 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
 
     const refetchCollections = async () => {
         if (!user?.id) return;
+
         const { data, error } = await supabase
             .from("collections")
             .select(`
-                id, name, user_id,
-                user_collections (
-                    location_id,
-                    attractions (
-                        id, Name, Address, Url, Telephone, Latitude, Longitude, County, Tags
-                    )
-                )
-            `)
+            id,
+            name,
+            user_id,
+            user_collections (
+              location_id,
+              attractions (
+                id, Name, Address, County, Url, Telephone, Tags, Latitude, Longitude
+              )
+            )
+          `)
             .eq("user_id", user.id);
 
-        if (error) console.error("Error fetching collections:", error.message);
-        else setCollections(data || []);
+        if (error) {
+            console.error("Failed to fetch collections", error.message);
+            return;
+        }
+
+        setCollections(data || []);
     };
+
 
 
     const createCollection = async (name: string, location?: Location) => {
