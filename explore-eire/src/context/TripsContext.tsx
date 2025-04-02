@@ -42,33 +42,30 @@ export const TripsProvider = ({ children }: { children: ReactNode }) => {
         if (!user) return;
 
         const { data, error } = await supabase
-            .from("trips")
+            .from('trips')
             .select(`
             *,
             user_trips (
-              id,
-              location_id,
-              created_at,
+              *,
               attractions (
                 id,
                 Name,
+                Latitude,
+                Longitude,
                 Address,
-                Url,
-                County,
-                Tags
+                Url
               )
             )
           `)
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
 
         if (error) {
-            console.error("Failed to fetch trips:", error);
+            console.error('Failed to fetch trips:', error);
         } else {
             setTrips(data);
         }
     };
-
 
 
     const createTrip = async (name: string) => {

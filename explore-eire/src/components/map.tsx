@@ -24,6 +24,7 @@ import Point from "ol/geom/Point";
 import Zoom from "ol/control/Zoom";
 import OlSelect from 'ol/interaction/Select.js';
 import { Fill, Stroke, Text } from "ol/style";
+import { useSelectedAttraction } from "@/context/SelectedAttractionContext";
 
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
@@ -150,7 +151,7 @@ const Map = () => {
     const { createCollection, addToCollection, collections, deleteCollection } = useCollectionsContext();
     const [currentIndex, setCurrentIndex] = useState<number | null>(null);
     const { locations, setLocations, focusOnLocation } = useMap(); // now available here too
-
+    const { selectedAttraction } = useSelectedAttraction();
 
     const normalizeLocation = (loc: any) => ({
         id: loc.id,
@@ -212,6 +213,30 @@ const Map = () => {
             loadMoreLocations();
         }
     };
+
+    useEffect(() => {
+        if (!selectedAttraction) return;
+
+        const exists = locations.some((loc) => loc.id === selectedAttraction.id);
+
+        if (!exists) {
+            return;
+        }
+
+        const normalized = normalizeLocation(selectedAttraction);
+        setSelectedLocation(normalized);
+
+        if (map && normalized.latitude && normalized.longitude) {
+            map.getView().animate({
+                center: fromLonLat([normalized.longitude, normalized.latitude]),
+                zoom: 10,
+                duration: 500,
+            });
+        }
+    }, [selectedAttraction, locations, map]);
+
+
+
 
     const loadMoreLocations = async () => {
         if (!hasMore) return; // Stop fetching if no more locations
@@ -750,7 +775,7 @@ const Map = () => {
                                 onClick={() => console.log("Favorited:", selectedLocation.name)}
                                 className="flex-1 bg-gray-200 hover:bg-red-500 text-gray-700 hover:text-white py-2 rounded-lg mr-2"
                             >
-                                <i className="ri-heart-line text-xl"></i> Favorite
+                                <i className="ri-car-line text-xl"></i> Add to Trip
                             </button>
 
                             <button
