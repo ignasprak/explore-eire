@@ -164,7 +164,6 @@ const Map = () => {
         longitude: loc.longitude ?? loc.Longitude,
     });
 
-
     // carousel
     const handleSelectLocation = (location: any) => {
         if (!location) {
@@ -550,8 +549,6 @@ const Map = () => {
         };
     }, [map, locations, selectedLocation]); // Re-run when selectedLocation changes
 
-
-
     return (
         <div className="relative h-screen ml-auto z-10">
             {/* Filter section */}
@@ -603,8 +600,6 @@ const Map = () => {
                     </div>
                 </div>
             </div>
-
-
 
             {/* Map Container */}
             <div ref={mapContainerRef} className="w-full h-full" />
@@ -700,9 +695,6 @@ const Map = () => {
                     </div>
                 )
             }
-
-
-
 
             {/* Attraction Sidebar (Popup) */}
             {
@@ -872,7 +864,6 @@ const Map = () => {
                     </div>
                 )}
 
-
                 {/* Grid of Attractions */}
                 <div
                     className="p-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-auto h-full"
@@ -959,7 +950,6 @@ const Map = () => {
                     ))}
                 </div>
             </div >
-
         </div >
     );
 };

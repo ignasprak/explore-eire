@@ -5,6 +5,7 @@ import { AuthProvider } from "./lib/authContext";
 import Sidebar from "@/components/navbar";
 import { MapProvider } from '@/context/MapContext';
 import { CollectionsProvider } from "@/context/CollectionsContext";
+import { TripsProvider } from "@/context/TripsContext";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -38,15 +39,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <MapProvider>
             <CollectionsProvider>
-              <div className="relative flex">
-                {/* Sidebar + Overlay Wrapper */}
-                <div className="group relative z-50">
-                  <Sidebar />
-                </div>
+              <TripsProvider>
+                <div className="relative flex">
+                  {/* Sidebar + Overlay Wrapper */}
+                  <div className="group relative z-50">
+                    <Sidebar />
+                  </div>
 
-                {/* Main Content */}
-                <main className="flex-1 z-10">{children}</main>
-              </div>
+                  {/* Main Content */}
+                  <main className="flex-1 z-10">{children}</main>
+                </div>
+              </TripsProvider>
             </CollectionsProvider>
           </MapProvider>
         </AuthProvider>
