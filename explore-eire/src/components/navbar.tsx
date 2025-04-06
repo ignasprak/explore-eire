@@ -12,14 +12,16 @@ import { useCollectionsContext } from "@/context/CollectionsContext";
 import { useTripsContext } from "@/context/TripsContext";
 import { useSelectedAttraction } from '@/context/SelectedAttractionContext';
 import { TripAttractionList } from "./trips/TripAttractionList";
-import DndWrapper from '@/components/dnd/DndWrapper';
 
-import {
-    DragDropContext,
-    Droppable,
-    Draggable,
-    DropResult,
-} from "react-beautiful-dnd";
+export const markerColors: Record<number, string> = {
+    0: "map-marker-red.svg",
+    1: "map-marker-orange.svg",
+    2: "map-marker-yellow.svg",
+    3: "map-marker-green.svg",
+    4: "map-marker-blue.svg",
+    5: "map-marker-indigo.svg",
+    6: "map-marker-violet.svg",
+};
 
 
 // Sidebar Component with Collections
@@ -36,7 +38,8 @@ export default function Navbar() {
     const { trips, createTrip, refetchTrips, deleteTrip } = useTripsContext();
     const [expandedTrip, setExpandedTrip] = useState<string | null>(null);
     const { setSelectedAttraction } = useSelectedAttraction();
-    const [orderedItems, setOrderedItems] = useState<any[]>([]);
+    const [groupedItems, setGroupedItems] = useState<Record<number, any[]>>({});
+    const [allDays, setAllDays] = useState<number[]>([]);
 
     const handleCollectionClick = (collectionId: string) => {
         setExpandedTrip(null); // Close any trip
@@ -118,35 +121,44 @@ export default function Navbar() {
         const trip = trips.find((t) => t.id === expandedTrip);
         if (!trip) return;
 
-        const sorted = [...trip.user_trips].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-        setOrderedItems(sorted);
+        const grouped: Record<number, any[]> = {};
+        const days = new Set<number>();
+
+        trip.user_trips.forEach((ut) => {
+            const day = ut.day ?? 0;
+            days.add(day);
+            if (!grouped[day]) grouped[day] = [];
+            grouped[day].push(ut);
+        });
+
+        const sortedGrouped = Object.entries(grouped).reduce((acc, [day, list]) => {
+            acc[+day] = list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+            return acc;
+        }, {} as Record<number, any[]>);
+
+        setGroupedItems(sortedGrouped);
+        setAllDays([...days].sort((a, b) => a - b));
     }, [expandedTrip, trips]);
 
-    const handleDragEnd = async (result: DropResult) => {
-        if (!result.destination || !expandedTrip) return;
+    const handleMoveDay = async (item: any, newDay: number) => {
+        if (!expandedTrip) return;
 
-        const reordered = Array.from(orderedItems);
-        const [removed] = reordered.splice(result.source.index, 1);
-        reordered.splice(result.destination.index, 0, removed);
-
-        setOrderedItems(reordered);
-
-        await Promise.all(
-            reordered.map((item, index) =>
-                supabase
-                    .from("user_trips")
-                    .update({ position: index })
-                    .match({ trip_id: expandedTrip, location_id: item.location_id })
-            )
-        );
+        await supabase
+            .from("user_trips")
+            .update({ day: newDay })
+            .match({ trip_id: expandedTrip, location_id: item.location_id });
 
         await refetchTrips();
     };
 
+    const handleAddNewDay = () => {
+        const nextDay = allDays.length > 0 ? Math.max(...allDays) + 1 : 0;
+        setAllDays((prev) => [...prev, nextDay]);
+        setGroupedItems((prev) => ({ ...prev, [nextDay]: [] }));
+    };
 
 
     {
-
 
         return (
             <>
@@ -268,19 +280,24 @@ export default function Navbar() {
                                     if (!selectedTrip) return;
 
                                     const attractions = selectedTrip.user_trips
-                                        .map((ut) => ut.attractions)
-                                        .filter(Boolean)
-                                        .map((a) => ({
-                                            id: a.id,
-                                            Name: a.Name,
-                                            Address: a.Address,
-                                            County: a.County ?? '',
-                                            Telephone: a.Telephone ?? '',
-                                            Url: a.Url ?? '',
-                                            Tags: a.Tags ?? '',
-                                            Latitude: a.Latitude,
-                                            Longitude: a.Longitude,
-                                        }));
+                                        .filter((ut) => ut.attractions)
+                                        .map((ut) => {
+                                            const a = ut.attractions;
+                                            const markerIcon = markerColors[ut.day ?? 0] || "map-marker-red.svg";
+
+                                            return {
+                                                id: a.id,
+                                                Name: a.Name,
+                                                Address: a.Address,
+                                                County: a.County ?? '',
+                                                Telephone: a.Telephone ?? '',
+                                                Url: a.Url ?? '',
+                                                Tags: a.Tags ?? '',
+                                                Latitude: a.Latitude,
+                                                Longitude: a.Longitude,
+                                                markerIcon,
+                                            };
+                                        });
 
                                     setLocations(attractions);
                                 }}
@@ -437,29 +454,46 @@ export default function Navbar() {
                                 Delete Trip
                             </button>
 
-                            {/* Drag & Drop Wrapper */}
-                            <DndWrapper>
-                                <TripAttractionList
-                                    items={orderedItems}
-                                    setItems={setOrderedItems}
-                                    onSelect={(item) =>
-                                        setSelectedAttraction({
-                                            ...item.attractions,
-                                            source: "trip",
-                                            tripId: expandedTrip!,
-                                        })
-                                    }
-                                    onRemove={async (item) => {
-                                        await handleRemoveAttractionFromTrip(expandedTrip!, item.location_id);
-                                    }}
-                                />
-                            </DndWrapper>
+                            {/* Add New Day */}
+                            <button
+                                onClick={handleAddNewDay}
+                                className="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                            >
+                                + Add New Day
+                            </button>
+
+                            {allDays.map((day) => (
+                                <div key={day} className="mb-4 border-t pt-2">
+                                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                                        Day {day + 1}
+                                    </h3>
+                                    <TripAttractionList
+                                        items={groupedItems[day] ?? []}
+                                        currentDay={day}
+                                        allDays={allDays}
+                                        setItems={(updatedList) => {
+                                            setGroupedItems((prev) => ({ ...prev, [day]: updatedList }));
+                                        }}
+                                        onSelect={(item) =>
+                                            setSelectedAttraction({
+                                                ...item.attractions,
+                                                source: "trip",
+                                                tripId: expandedTrip!,
+                                            })
+                                        }
+                                        onRemove={async (item) => {
+                                            const updated = groupedItems[day]?.filter(
+                                                (i) => i.location_id !== item.location_id
+                                            );
+                                            setGroupedItems((prev) => ({ ...prev, [day]: updated }));
+                                            await handleRemoveAttractionFromTrip(expandedTrip!, item.location_id);
+                                        }}
+                                        onMoveDay={handleMoveDay}
+                                    />
+                                </div>
+                            ))}
                         </div>
                     )}
-
-
-
-
 
                     {/* Log Out */}
                     <div className="mt-auto mb-8 w-full">
@@ -514,7 +548,7 @@ export default function Navbar() {
                                 key={collection.id}
                                 onClick={() => {
                                     handleCollectionClick(collection.id);
-                                    setMobileMenuOpen(false); // close menu on click
+                                    setMobileMenuOpen(false);
                                 }}
                                 className="flex items-center w-full text-left px-3 py-2 rounded hover:bg-gray-100"
                             >

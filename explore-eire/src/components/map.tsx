@@ -386,12 +386,15 @@ const Map = () => {
             feature.setStyle(
                 new Style({
                     image: new Icon({
-                        src: isSelected ? "marker-icon-red.svg" : "marker-icon-red2.svg",
+                        src: location.markerIcon
+                            ? `/markers/${location.markerIcon}`
+                            : "map-marker-red2.svg", // fallback
                         scale: isSelected ? 0.085 : 0.035,
                         anchor: [0.5, 1],
                         anchorXUnits: "fraction",
                         anchorYUnits: "fraction",
                     }),
+
                     text: isSelected
                         ? new Text({
                             text: location.name,
@@ -508,7 +511,12 @@ const Map = () => {
             feature.setStyle(
                 new Style({
                     image: new Icon({
-                        src: isSelected ? "marker-icon-red.svg" : "marker-icon-red2.svg",
+                        src: location.markerIcon
+                            ? `/markers/${location.markerIcon}`
+                            : isSelected
+                                ? "/markers/map-marker-red.svg"
+                                : "/markers/map-marker-red2.svg",
+
                         scale: isSelected ? 0.085 : 0.035, // Larger selected marker
                         anchor: [0.5, 1],
                         anchorXUnits: "fraction",
