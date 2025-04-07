@@ -23,7 +23,6 @@ export const markerColors: Record<number, string> = {
     6: "map-marker-violet.svg",
 };
 
-
 // Sidebar Component with Collections
 export default function Navbar() {
     const { user } = useAuth();
@@ -42,8 +41,8 @@ export default function Navbar() {
     const [allDays, setAllDays] = useState<number[]>([]);
 
     const handleCollectionClick = (collectionId: string) => {
-        setExpandedTrip(null); // Close any trip
-        setExpandedCollection(collectionId); // Always open the selected collection
+        setExpandedTrip(null);
+        setExpandedCollection(collectionId);
 
         const selectedCollection = collections.find((c) => c.id === collectionId);
         if (!selectedCollection) return;
@@ -143,12 +142,42 @@ export default function Navbar() {
     const handleMoveDay = async (item: any, newDay: number) => {
         if (!expandedTrip) return;
 
-        await supabase
+        const { error } = await supabase
             .from("user_trips")
             .update({ day: newDay })
             .match({ trip_id: expandedTrip, location_id: item.location_id });
 
+        if (error) {
+            console.error("Error updating day", error.message);
+            return;
+        }
+
         await refetchTrips();
+
+        const { data: updatedUserTrips, error: fetchError } = await supabase
+            .from("user_trips")
+            .select("*, attractions(*)")
+            .eq("trip_id", expandedTrip);
+
+        if (fetchError || !updatedUserTrips) {
+            console.error("Error fetching updated trip after day move", fetchError?.message);
+            return;
+        }
+
+        const attractions = updatedUserTrips.map((ut) => ({
+            id: ut.attractions.id,
+            Name: ut.attractions.Name,
+            Address: ut.attractions.Address,
+            County: ut.attractions.County ?? '',
+            Telephone: ut.attractions.Telephone ?? '',
+            Url: ut.attractions.Url ?? '',
+            Tags: ut.attractions.Tags ?? '',
+            Latitude: ut.attractions.Latitude,
+            Longitude: ut.attractions.Longitude,
+            markerIcon: markerColors[ut.day ?? 0] || "map-marker-red.svg",
+        }));
+
+        setLocations(attractions);
     };
 
     const handleAddNewDay = () => {
@@ -157,9 +186,7 @@ export default function Navbar() {
         setGroupedItems((prev) => ({ ...prev, [nextDay]: [] }));
     };
 
-
     {
-
         return (
             <>
                 <nav className="hidden md:flex fixed top-0 left-0 h-screen w-20 bg-white shadow-lg flex-col items-center z-50">
@@ -273,8 +300,8 @@ export default function Navbar() {
                             <button
                                 key={trip.id}
                                 onClick={() => {
-                                    setExpandedCollection(null); // collapse collections
-                                    setExpandedTrip(trip.id); // open trip
+                                    setExpandedCollection(null);
+                                    setExpandedTrip(trip.id);
 
                                     const selectedTrip = trips.find((t) => t.id === trip.id);
                                     if (!selectedTrip) return;
@@ -309,7 +336,6 @@ export default function Navbar() {
                             </button>
                         ))}
 
-
                     </div>
 
                     {/* Expanded Collection View */}
@@ -329,8 +355,8 @@ export default function Navbar() {
                                     console.log("deleting collection with id:", expandedCollection);
                                     await deleteCollection(expandedCollection);
                                     setExpandedCollection(null);
-                                    setExpandedTrip(null); // collapses the view
-                                    setLocations([]); // clear map markers
+                                    setExpandedTrip(null);
+                                    setLocations([]);
                                     await refetchCollections();
 
                                 }}
@@ -338,6 +364,17 @@ export default function Navbar() {
                                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
                             >
                                 Delete Collection
+                            </button>
+
+                            {/* Back to Search */}
+                            <button
+                                onClick={() => {
+                                    setExpandedCollection(null);
+                                    setLocations([]);
+                                }}
+                                className="mb-2 text-blue-600 hover:underline w-full text-left"
+                            >
+                                ← Back to Search
                             </button>
 
 
@@ -399,7 +436,7 @@ export default function Navbar() {
                                                                 trip_id: selectedTripId,
                                                                 location_id: item.location_id,
                                                                 user_id: user?.id,
-                                                                metadata: JSON.stringify({ addedFrom: "collection" }), // optional
+                                                                metadata: JSON.stringify({ addedFrom: "collection" }),
                                                             });
 
                                                             if (error) {
@@ -436,10 +473,30 @@ export default function Navbar() {
                     {/* Expanded Trip View */}
                     {expandedTrip && (
                         <div className="absolute left-full top-0 w-96 h-full bg-white shadow-lg p-4 z-30">
-                            <h2 className="text-lg font-bold">
+                            <h2 className="text-lg font-bold mb-2">
                                 {trips.find((t) => t.id === expandedTrip)?.name}
                             </h2>
 
+                            {/* Add Day */}
+                            <button
+                                onClick={handleAddNewDay}
+                                className="mb-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition w-full"
+                            >
+                                + Add New Day
+                            </button>
+
+                            {/* Back to Search */}
+                            <button
+                                onClick={() => {
+                                    setExpandedTrip(null);
+                                    setLocations([]);
+                                }}
+                                className="mb-2 text-blue-600 hover:underline w-full text-left"
+                            >
+                                ← Back to Search
+                            </button>
+
+                            {/* Delete Trip */}
                             <button
                                 onClick={async () => {
                                     const isConfirmed = window.confirm("Are you sure you want to delete this trip?");
@@ -449,18 +506,12 @@ export default function Navbar() {
                                     setExpandedTrip(null);
                                     await refetchTrips();
                                 }}
-                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition mb-4"
+                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition w-full flex items-center justify-center gap-2"
                             >
-                                Delete Trip
+                                <i className="ri-delete-bin-line text-lg" />
+                                Delete
                             </button>
 
-                            {/* Add New Day */}
-                            <button
-                                onClick={handleAddNewDay}
-                                className="mb-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-                            >
-                                + Add New Day
-                            </button>
 
                             {allDays.map((day) => (
                                 <div key={day} className="mb-4 border-t pt-2">
@@ -492,28 +543,52 @@ export default function Navbar() {
                                     />
                                 </div>
                             ))}
+
+
                         </div>
                     )}
 
+
+
                     {/* Log Out */}
                     <div className="mt-auto mb-8 w-full">
+                        {/* Settings Section */}
+                        <div className="w-full flex flex-col items-center">
+                            <button
+                                onClick={() => setShowSettings(true)}
+                                className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
+                            >
+                                <i className="ri-settings-3-line text-xl mb-1"></i>
+                                <span className="text-xs">Settings</span>
+                            </button>
+                        </div>
+
                         {user ? (
-                            <>
-                                <button onClick={handleSignOut} className="w-full text-red-500 hover:underline py-2">
-                                    Log Out
+                            <div className="w-full flex flex-col items-center space-y-4 mb-6">
+                                <button
+                                    onClick={handleSignOut}
+                                    className="flex flex-col items-center justify-center text-gray-700 hover:text-red-500 hover:bg-gray-100 py-2 w-full rounded-md"
+                                >
+                                    <i className="ri-logout-box-r-line text-xl mb-1" />
+                                    <span className="text-xs">Log Out</span>
                                 </button>
-                            </>
+                            </div>
                         ) : (
-                            <div className="flex flex-col items-center space-y-2">
+                            <div className="w-full flex flex-col items-center space-y-2 mb-6">
                                 <Link href="/register" legacyBehavior>
-                                    <a className="text-gray-600 hover:text-gray-900">Register</a>
+                                    <a className="flex flex-col items-center text-gray-600 hover:text-gray-900">
+                                        <i className="ri-user-add-line text-xl mb-1" />
+                                        <span className="text-xs">Register</span>
+                                    </a>
                                 </Link>
                                 <Link href="/login" legacyBehavior>
-                                    <a className="text-gray-600 hover:text-gray-900">Login</a>
+                                    <a className="flex flex-col items-center text-gray-600 hover:text-gray-900">
+                                        <i className="ri-login-box-line text-xl mb-1" />
+                                        <span className="text-xs">Login</span>
+                                    </a>
                                 </Link>
                             </div>
                         )}
-
                     </div>
                 </nav>
 
@@ -574,8 +649,12 @@ export default function Navbar() {
                             </button>
                         )}
                     </div>
+
+
                 </div >
             </>
+
+
         );
     }
 

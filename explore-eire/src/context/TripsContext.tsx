@@ -19,7 +19,6 @@ export type Trip = {
     }[];
 };
 
-
 type TripsContextType = {
     trips: Trip[];
     createTrip: (name: string) => Promise<void>;
@@ -66,7 +65,6 @@ export const TripsProvider = ({ children }: { children: ReactNode }) => {
             setTrips(data);
         }
     };
-
 
     const createTrip = async (name: string) => {
         if (!user) return;

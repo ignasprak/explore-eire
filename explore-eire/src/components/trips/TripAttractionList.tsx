@@ -12,6 +12,25 @@ interface TripAttractionListProps {
     onMoveDay: (item: any, newDay: number) => void;
 }
 
+export const dayBorderColours: Record<number, string> = {
+    0: "border-red-500",
+    1: "border-orange-500",
+    2: "border-yellow-400",
+    3: "border-green-500",
+    4: "border-blue-500",
+    5: "border-indigo-500",
+    6: "border-violet-500",
+};
+
+export const dayColours: Record<number, string> = {
+    0: "border-red-300 bg-[rgba(255,0,0,0.05)]",
+    1: "border-orange-300 bg-[rgba(255,165,0,0.05)]",
+    2: "border-yellow-300 bg-[rgba(255,255,0,0.05)]",
+    3: "border-green-300 bg-[rgba(0,128,0,0.05)]",
+    4: "border-blue-300 bg-[rgba(0,0,255,0.05)]",
+    5: "border-indigo-300 bg-[rgba(75,0,130,0.05)]",
+    6: "border-violet-300 bg-[rgba(238,130,238,0.05)]",
+};
 
 export function TripAttractionList({
     items,
@@ -25,12 +44,15 @@ export function TripAttractionList({
     return (
         <div className="flex flex-col space-y-2 overflow-y-auto max-h-[75%] pr-1">
             {items.map((item) => (
-                <div key={item.location_id} className="p-3 border rounded bg-gray-100">
+                <div
+                    key={item.location_id}
+                    className={`p-3 rounded border shadow-sm ${dayColours[currentDay] ?? "bg-white border-gray-300"}`}
+                >
                     <div className="flex justify-between items-start">
-                        <div onClick={() => onSelect(item)} className="cursor-pointer">
-                            <h4 className="font-semibold">{item.attractions?.Name}</h4>
-                            <p className="text-sm">{item.attractions?.Address}</p>
-                            {item.attractions?.Url && (
+                        <div>
+                            <h4 className="font-semibold">{item.attractions.Name}</h4>
+                            <p className="text-sm">{item.attractions.Address}</p>
+                            {item.attractions.Url && (
                                 <a
                                     href={item.attractions.Url}
                                     target="_blank"
@@ -41,11 +63,8 @@ export function TripAttractionList({
                                 </a>
                             )}
                         </div>
-                        <button
-                            onClick={() => onRemove(item)}
-                            className="text-gray-500 hover:text-red-500 transition"
-                        >
-                            <i className="ri-close-line text-xl"></i>
+                        <button className="text-gray-400 hover:text-red-500">
+                            <i className="ri-close-line text-xl" />
                         </button>
                     </div>
 
@@ -67,4 +86,5 @@ export function TripAttractionList({
             ))}
         </div>
     );
+
 }

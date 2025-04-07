@@ -145,12 +145,12 @@ const Map = () => {
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
-    const [hasMore, setHasMore] = useState(true); // Initially true
+    const [hasMore, setHasMore] = useState(true);
     const [isCollectionPopupOpen, setIsCollectionPopupOpen] = useState(false);
     const [selectedFeature, setSelectedFeature] = useState<Feature<Point> | null>(null);
     const { createCollection, addToCollection, collections, deleteCollection } = useCollectionsContext();
     const [currentIndex, setCurrentIndex] = useState<number | null>(null);
-    const { locations, setLocations, focusOnLocation } = useMap(); // now available here too
+    const { locations, setLocations, focusOnLocation } = useMap();
     const { selectedAttraction } = useSelectedAttraction();
 
     const normalizeLocation = (loc: any) => ({
@@ -177,7 +177,6 @@ const Map = () => {
         setCurrentIndex(index);
         setSelectedLocation(normalizeLocation(location));
     };
-
 
     const handleNext = () => {
         if (currentIndex === null || locations.length === 0) return;
@@ -235,9 +234,6 @@ const Map = () => {
         }
     }, [selectedAttraction, locations, map]);
 
-
-
-
     const loadMoreLocations = async () => {
         if (!hasMore) return; // Stop fetching if no more locations
 
@@ -269,7 +265,6 @@ const Map = () => {
             console.error("Error loading more locations:", err);
         }
     };
-
 
     const toggleDropdown = (id: string) => {
         setDropdownOpenId((prev) => (prev === id ? null : id)); // Close if open, otherwise open
@@ -338,7 +333,6 @@ const Map = () => {
             setLocations([]); // Clear locations if no filters are applied
         }
     }, [searchQuery, selectedFilters, selectedCounties]);
-
 
     // handles clicking outside and inside the collections popup
     useEffect(() => {
@@ -451,12 +445,12 @@ const Map = () => {
         const collectionName = prompt('Enter a name for your new collection:');
         if (!collectionName) return;
 
-        await createCollection(collectionName); // Pass the name to the hook
+        await createCollection(collectionName); // Pass name to the hook
     };
 
     // Call fetchLocations inside useEffect
     useEffect(() => {
-        fetchLocations(); // This is the correct place to call the async function
+        fetchLocations();
     }, [searchQuery, selectedFilters, selectedCounties]);
 
     // Initialize OpenLayers map
@@ -585,7 +579,7 @@ const Map = () => {
     return (
         <div className="relative h-screen ml-auto z-10">
             {/* Filter section */}
-            {/* === Map UI Controls === */}
+            {/* Map UI Controls */}
             <div className="absolute top-4 left-[5rem] right-4 md:left-28 md:w-[20rem] z-50 space-y-4">
 
                 {/* Search Input - Always visible */}
@@ -648,7 +642,7 @@ const Map = () => {
             )
             }
 
-            {/* === Mobile Popup for Selected Attraction === */}
+            {/* Mobile Popup for Selected Attraction */}
             {
                 selectedLocation && (
                     <div className="fixed bottom-0 left-0 right-0 block md:hidden z-50 bg-white shadow-xl rounded-t-lg border-t border-gray-200 h-64 px-4 pt-4 pb-20">
