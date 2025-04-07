@@ -548,8 +548,6 @@ export default function Navbar() {
                         </div>
                     )}
 
-
-
                     {/* Log Out */}
                     <div className="mt-auto mb-8 w-full">
                         {/* Settings Section */}
