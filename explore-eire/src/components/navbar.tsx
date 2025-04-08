@@ -31,16 +31,25 @@ export default function Navbar() {
     const { setLocations } = useMap();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [createDropdownOpen, setCreateDropdownOpen] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
+    const [settingsExpanded, setSettingsExpanded] = useState(false);
+    const [expandedTrip, setExpandedTrip] = useState<string | null>(null);
     const [newCollectionName, setNewCollectionName] = useState('');
     const [newTripName, setNewTripName] = useState('');
     const { collections, refetchCollections, deleteCollection, createCollection } = useCollectionsContext();
     const { trips, createTrip, refetchTrips, deleteTrip } = useTripsContext();
-    const [expandedTrip, setExpandedTrip] = useState<string | null>(null);
     const { setSelectedAttraction } = useSelectedAttraction();
     const [groupedItems, setGroupedItems] = useState<Record<number, any[]>>({});
     const [allDays, setAllDays] = useState<number[]>([]);
 
+
     const handleCollectionClick = (collectionId: string) => {
+        if (expandedCollection === collectionId) {
+            setExpandedCollection(null);
+            setLocations([]);
+            return;
+        }
+
         setExpandedTrip(null);
         setExpandedCollection(collectionId);
 
@@ -181,10 +190,16 @@ export default function Navbar() {
     };
 
     const handleAddNewDay = () => {
+        if (allDays.length >= 7) {
+            alert("Trip day limit reached. You can only have up to 7 days.");
+            return;
+        }
+
         const nextDay = allDays.length > 0 ? Math.max(...allDays) + 1 : 0;
         setAllDays((prev) => [...prev, nextDay]);
         setGroupedItems((prev) => ({ ...prev, [nextDay]: [] }));
     };
+
 
     {
         return (
@@ -202,11 +217,16 @@ export default function Navbar() {
 
                     {/* Sidebar Links */}
                     <div className="flex flex-col mt-10 w-full space-y-3">
-
                         {/* Create Button */}
                         <div className="relative w-full">
                             <button
-                                onClick={() => setCreateDropdownOpen(!createDropdownOpen)}
+                                onClick={() => {
+                                    if (createDropdownOpen) {
+                                        setCreateDropdownOpen(false);
+                                    } else {
+                                        setCreateDropdownOpen(true);
+                                    }
+                                }}
                                 className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
                             >
                                 <i className="ri-add-circle-line text-xl mb-1"></i>
@@ -236,7 +256,7 @@ export default function Navbar() {
                                                     alert('Please enter a collection name.');
                                                 }
                                             }}
-                                            className="mt-2 w-full bg-green-500 text-white text-sm py-1 rounded hover:bg-green-600"
+                                            className="mt-2 w-full bg-primary text-white text-sm py-1 rounded hover:bg-green-600"
                                         >
                                             Create Collection
                                         </button>
@@ -262,7 +282,7 @@ export default function Navbar() {
                                                     alert("Please enter a trip name.");
                                                 }
                                             }}
-                                            className="mt-2 w-full bg-green-500 text-white text-sm py-1 rounded hover:bg-green-600"
+                                            className="mt-2 w-full bg-primary text-white text-sm py-1 rounded hover:bg-green-600"
                                         >
                                             Create New Trip
                                         </button>
@@ -272,7 +292,6 @@ export default function Navbar() {
                                 </div>
                             )}
                         </div>
-
 
                         {/* Collections Section */}
                         {user && (
@@ -300,11 +319,17 @@ export default function Navbar() {
                             <button
                                 key={trip.id}
                                 onClick={() => {
-                                    setExpandedCollection(null);
-                                    setExpandedTrip(trip.id);
+                                    if (expandedTrip === trip.id) {
+                                        setExpandedTrip(null);
+                                        setLocations([]);
+                                        return;
+                                    }
 
                                     const selectedTrip = trips.find((t) => t.id === trip.id);
                                     if (!selectedTrip) return;
+
+                                    setExpandedCollection(null);
+                                    setExpandedTrip(trip.id);
 
                                     const attractions = selectedTrip.user_trips
                                         .filter((ut) => ut.attractions)
@@ -335,214 +360,222 @@ export default function Navbar() {
                                 <span className="text-xs text-center w-full">{trip.name}</span>
                             </button>
                         ))}
-
                     </div>
 
                     {/* Expanded Collection View */}
                     {expandedCollection && (
-                        <div className="absolute left-full top-0 w-96 h-full bg-white shadow-lg p-4 z-30">
-                            <h2 className="text-lg font-bold">
-                                {collections.find((c) => c.id === expandedCollection)?.name}
-                            </h2>
+                        <div className="absolute left-full top-0 w-96 h-full bg-white shadow-lg p-4 z-30 flex flex-col">
+                            {/* Header Row */}
+                            <div className="flex items-center justify-between mb-4">
+                                {/* Title and Delete */}
+                                <div className="flex items-center space-x-3">
+                                    <h2 className="text-xl font-bold">
+                                        {collections.find((c) => c.id === expandedCollection)?.name}
+                                    </h2>
 
-                            <button
-                                onClick={async () => {
-                                    if (!expandedCollection) return;
+                                    {/* Delete */}
+                                    <button
+                                        onClick={async () => {
+                                            if (!expandedCollection) return;
+                                            const isConfirmed = window.confirm("Are you sure you want to delete this collection?");
+                                            if (!isConfirmed) return;
+                                            await deleteCollection(expandedCollection);
+                                            setExpandedCollection(null);
+                                            setExpandedTrip(null);
+                                            setLocations([]);
+                                            await refetchCollections();
+                                        }}
+                                        className="text-gray-600 hover:text-red-500 transition"
+                                        title="Delete Collection"
+                                    >
+                                        <i className="ri-delete-bin-line text-xl" />
+                                    </button>
+                                </div>
 
-                                    const isConfirmed = window.confirm("Are you sure you want to delete this collection?");
-                                    if (!isConfirmed) return;
-
-                                    console.log("deleting collection with id:", expandedCollection);
-                                    await deleteCollection(expandedCollection);
-                                    setExpandedCollection(null);
-                                    setExpandedTrip(null);
-                                    setLocations([]);
-                                    await refetchCollections();
-
-                                }}
-
-                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-                            >
-                                Delete Collection
-                            </button>
-
-                            {/* Back to Search */}
-                            <button
-                                onClick={() => {
-                                    setExpandedCollection(null);
-                                    setLocations([]);
-                                }}
-                                className="mb-2 text-blue-600 hover:underline w-full text-left"
-                            >
-                                ← Back to Search
-                            </button>
-
-
-                            {/* List Attractions */}
-                            <div className="mt-4 space-y-2">
-                                {collections
-                                    .find((c) => c.id === expandedCollection)
-                                    ?.user_collections.map((item) => (
-                                        <div key={item.location_id} className="p-3 border rounded bg-gray-100">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <div
-                                                        className="cursor-pointer"
-                                                        onClick={() =>
-                                                            setSelectedAttraction({
-                                                                ...item.attractions,
-                                                                source: 'collection',
-                                                                collectionId: expandedCollection!,
-                                                            })
-                                                        }
-                                                    >
-                                                        <h4 className="font-semibold">{item.attractions.Name}</h4>
-                                                        <p className="text-sm">{item.attractions.Address}</p>
-                                                    </div>
-
-                                                    {item.attractions.Url && (
-                                                        <a
-                                                            href={item.attractions.Url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-blue-500 hover:underline text-sm"
-                                                        >
-                                                            Visit Website
-                                                        </a>
-                                                    )}
-                                                </div>
-
-                                                {/* Remove from collection */}
-                                                <button
-                                                    onClick={() => handleRemoveAttraction(expandedCollection, item.location_id)}
-                                                    className="text-gray-500 hover:text-red-500 transition"
-                                                >
-                                                    <i className="ri-close-line text-xl"></i>
-                                                </button>
-                                            </div>
-
-                                            {/* === Add to Trip Dropdown === */}
-                                            {trips.length > 0 && (
-                                                <div className="mt-3">
-                                                    <label className="block text-xs font-medium text-gray-500 mb-1">Add to Trip</label>
-                                                    <select
-                                                        className="w-full border text-sm rounded p-1"
-                                                        defaultValue=""
-                                                        onChange={async (e) => {
-                                                            const selectedTripId = e.target.value;
-                                                            if (!selectedTripId) return;
-
-                                                            const { error } = await supabase.from("user_trips").insert({
-                                                                trip_id: selectedTripId,
-                                                                location_id: item.location_id,
-                                                                user_id: user?.id,
-                                                                metadata: JSON.stringify({ addedFrom: "collection" }),
-                                                            });
-
-                                                            if (error) {
-                                                                console.error("Failed to add to trip:", error.message);
-                                                                alert("Failed to add attraction to trip.");
-                                                            } else {
-                                                                await refetchTrips();
-                                                                alert("Attraction added to trip!");
-                                                            }
-
-                                                            e.target.value = "";
-                                                        }}
-
-
-
-                                                    >
-                                                        <option value="" disabled>Select trip...</option>
-                                                        {trips.map((trip) => (
-                                                            <option key={trip.id} value={trip.id}>
-                                                                {trip.name}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-
+                                {/* Back */}
+                                <button
+                                    onClick={() => {
+                                        setExpandedCollection(null);
+                                        setLocations([]);
+                                    }}
+                                    className="text-gray-600 hover:text-blue-500 transition"
+                                    title="Back to Search"
+                                >
+                                    <i className="ri-arrow-go-back-line text-xl" />
+                                </button>
                             </div>
 
+                            {/* List Attractions */}
+                            <div className="flex-1 overflow-y-auto space-y-2 pr-1 rounded">
+                                {collections.find((c) => c.id === expandedCollection)?.user_collections.map((item) => (
+                                    <div key={item.location_id} className="p-3 border rounded bg-gray-100">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <div
+                                                    className="cursor-pointer"
+                                                    onClick={() =>
+                                                        setSelectedAttraction({
+                                                            ...item.attractions,
+                                                            source: 'collection',
+                                                            collectionId: expandedCollection!,
+                                                        })
+                                                    }
+                                                >
+                                                    <h4 className="font-semibold">{item.attractions.Name}</h4>
+                                                    <p className="text-sm">{item.attractions.Address}</p>
+                                                </div>
+
+                                                {item.attractions.Url && (
+                                                    <a
+                                                        href={item.attractions.Url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-blue-500 hover:underline text-sm"
+                                                    >
+                                                        Visit Website
+                                                    </a>
+                                                )}
+                                            </div>
+
+                                            {/* Remove from collection */}
+                                            <button
+                                                onClick={() => handleRemoveAttraction(expandedCollection, item.location_id)}
+                                                className="text-gray-500 hover:text-red-500 transition"
+                                            >
+                                                <i className="ri-close-line text-xl"></i>
+                                            </button>
+                                        </div>
+
+                                        {/* === Add to Trip Dropdown === */}
+                                        {trips.length > 0 && (
+                                            <div className="mt-3">
+                                                <label className="block text-xs font-medium text-gray-500 mb-1">Add to Trip</label>
+                                                <select
+                                                    className="w-full border text-sm rounded p-1"
+                                                    defaultValue=""
+                                                    onChange={async (e) => {
+                                                        const selectedTripId = e.target.value;
+                                                        if (!selectedTripId) return;
+
+                                                        const { error } = await supabase.from("user_trips").insert({
+                                                            trip_id: selectedTripId,
+                                                            location_id: item.location_id,
+                                                            user_id: user?.id,
+                                                            metadata: JSON.stringify({ addedFrom: "collection" }),
+                                                        });
+
+                                                        if (error) {
+                                                            console.error("Failed to add to trip:", error.message);
+                                                            alert("Failed to add attraction to trip.");
+                                                        } else {
+                                                            await refetchTrips();
+                                                            alert("Attraction added to trip!");
+                                                        }
+
+                                                        e.target.value = "";
+                                                    }}
+                                                >
+                                                    <option value="" disabled>Add to trip...</option>
+                                                    {trips.map((trip) => (
+                                                        <option key={trip.id} value={trip.id}>
+                                                            {trip.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
                     {/* Expanded Trip View */}
                     {expandedTrip && (
-                        <div className="absolute left-full top-0 w-96 h-full bg-white shadow-lg p-4 z-30">
-                            <h2 className="text-lg font-bold mb-2">
-                                {trips.find((t) => t.id === expandedTrip)?.name}
-                            </h2>
+                        <div className="absolute left-full top-0 w-96 h-full bg-white shadow-lg p-4 z-30 flex flex-col">
+                            {/* Trip Header Row */}
+                            <div className="flex items-center justify-between mb-4">
+                                {/* Trip Title + Delete */}
+                                <div className="flex items-center space-x-3">
+                                    <h2 className="text-xl font-bold">
+                                        {trips.find((t) => t.id === expandedTrip)?.name}
+                                    </h2>
+
+                                    {/* Delete Trip */}
+                                    <button
+                                        onClick={async () => {
+                                            const isConfirmed = window.confirm("Are you sure you want to delete this trip?");
+                                            if (!isConfirmed) return;
+                                            await deleteTrip(expandedTrip!);
+                                            setExpandedTrip(null);
+                                            await refetchTrips();
+                                        }}
+                                        className="text-gray-600 hover:text-red-500 transition"
+                                        title="Delete Trip"
+                                    >
+                                        <i className="ri-delete-bin-line text-xl" />
+                                    </button>
+                                </div>
+
+                                {/* Back to Search */}
+                                <button
+                                    onClick={() => {
+                                        setExpandedTrip(null);
+                                        setLocations([]);
+                                    }}
+                                    className="text-gray-600 hover:text-blue-500 transition"
+                                    title="Back to Search"
+                                >
+                                    <i className="ri-arrow-go-back-line text-xl" />
+                                </button>
+                            </div>
 
                             {/* Add Day */}
-                            <button
-                                onClick={handleAddNewDay}
-                                className="mb-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition w-full"
-                            >
-                                + Add New Day
-                            </button>
+                            <div className="flex justify-start mb-4">
+                                <button
+                                    onClick={handleAddNewDay}
+                                    className="text-gray-600 hover:text-gray-800 transition disabled:opacity-50"
+                                    disabled={allDays.length >= 7}
+                                >
+                                    <i className="ri-sun-line" /> New Day
+                                </button>
 
-                            {/* Back to Search */}
-                            <button
-                                onClick={() => {
-                                    setExpandedTrip(null);
-                                    setLocations([]);
-                                }}
-                                className="mb-2 text-blue-600 hover:underline w-full text-left"
-                            >
-                                ← Back to Search
-                            </button>
+                            </div>
 
-                            {/* Delete Trip */}
-                            <button
-                                onClick={async () => {
-                                    const isConfirmed = window.confirm("Are you sure you want to delete this trip?");
-                                    if (!isConfirmed) return;
-
-                                    await deleteTrip(expandedTrip);
-                                    setExpandedTrip(null);
-                                    await refetchTrips();
-                                }}
-                                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition w-full flex items-center justify-center gap-2"
-                            >
-                                <i className="ri-delete-bin-line text-lg" />
-                                Delete
-                            </button>
+                            <div className="flex-1 overflow-y-auto pr-1 space-y-4">
 
 
-                            {allDays.map((day) => (
-                                <div key={day} className="mb-4 border-t pt-2">
-                                    <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                                        Day {day + 1}
-                                    </h3>
-                                    <TripAttractionList
-                                        items={groupedItems[day] ?? []}
-                                        currentDay={day}
-                                        allDays={allDays}
-                                        setItems={(updatedList) => {
-                                            setGroupedItems((prev) => ({ ...prev, [day]: updatedList }));
-                                        }}
-                                        onSelect={(item) =>
-                                            setSelectedAttraction({
-                                                ...item.attractions,
-                                                source: "trip",
-                                                tripId: expandedTrip!,
-                                            })
-                                        }
-                                        onRemove={async (item) => {
-                                            const updated = groupedItems[day]?.filter(
-                                                (i) => i.location_id !== item.location_id
-                                            );
-                                            setGroupedItems((prev) => ({ ...prev, [day]: updated }));
-                                            await handleRemoveAttractionFromTrip(expandedTrip!, item.location_id);
-                                        }}
-                                        onMoveDay={handleMoveDay}
-                                    />
-                                </div>
-                            ))}
+                                {allDays.map((day) => (
+                                    <div key={day} className="mb-4 border-t pt-2">
+                                        <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                                            Day {day + 1}
+                                        </h3>
+                                        <TripAttractionList
+                                            items={groupedItems[day] ?? []}
+                                            currentDay={day}
+                                            allDays={allDays}
+                                            setItems={(updatedList) => {
+                                                setGroupedItems((prev) => ({ ...prev, [day]: updatedList }));
+                                            }}
+                                            onSelect={(item) =>
+                                                setSelectedAttraction({
+                                                    ...item.attractions,
+                                                    source: "trip",
+                                                    tripId: expandedTrip!,
+                                                })
+                                            }
+                                            onRemove={async (item) => {
+                                                const updated = groupedItems[day]?.filter(
+                                                    (i) => i.location_id !== item.location_id
+                                                );
+                                                setGroupedItems((prev) => ({ ...prev, [day]: updated }));
+                                                await handleRemoveAttractionFromTrip(expandedTrip!, item.location_id);
+                                            }}
+                                            onMoveDay={handleMoveDay}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
 
 
                         </div>
@@ -553,7 +586,13 @@ export default function Navbar() {
                         {/* Settings Section */}
                         <div className="w-full flex flex-col items-center">
                             <button
-                                onClick={() => setShowSettings(true)}
+                                onClick={() => {
+                                    setSettingsExpanded(true);
+                                    setExpandedCollection(null);
+                                    setExpandedTrip(null);
+                                    setLocations([]);
+                                }}
+
                                 className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
                             >
                                 <i className="ri-settings-3-line text-xl mb-1"></i>
@@ -589,6 +628,83 @@ export default function Navbar() {
                         )}
                     </div>
                 </nav>
+
+                {/* Settings */}
+                {settingsExpanded && (
+                    <div className="absolute top-0 left-20 w-96 h-full bg-white shadow-lg p-4 z-30 overflow-y-auto">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-bold">Settings</h2>
+                            <button
+                                onClick={() => setSettingsExpanded(false)}
+                                className="text-gray-600 hover:text-blue-500 transition"
+                                title="Back to Search"
+                            >
+                                <i className="ri-arrow-go-back-line text-xl" />
+                            </button>
+                        </div>
+
+                        {/* Font Size */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Font Size</label>
+                            <select
+                                onChange={(e) =>
+                                    document.documentElement.style.setProperty('--user-font-size', e.target.value)
+                                }
+                                className="w-full border rounded p-2 text-sm"
+                            >
+                                <option value="16px">Normal</option>
+                                <option value="18px">Large</option>
+                                <option value="20px">Extra Large</option>
+                            </select>
+                        </div>
+
+                        {/* Focus Ring */}
+                        <input
+                            type="checkbox"
+                            id="focusOutline"
+                            onChange={(e) => {
+                                if (e.target.checked) {
+                                    document.documentElement.style.setProperty('--outline-style', '2px solid #2563eb');
+                                } else {
+                                    document.documentElement.style.setProperty('--outline-style', 'none');
+                                }
+                            }}
+                            className="mr-2"
+                        />
+                        <label htmlFor="focusOutline" className="text-sm text-gray-700">
+                            Show Keyboard Focus Ring
+                        </label>
+
+                        {/* Dyslexia Font */}
+                        <input
+                            type="checkbox"
+                            id="dyslexiaFont"
+                            onChange={(e) => {
+                                document.body.classList.toggle('dyslexia-font', e.target.checked);
+                            }}
+                            className="mr-2"
+                        />
+                        <label htmlFor="dyslexiaFont" className="text-sm text-gray-700">
+                            Dyslexia-Friendly Font
+                        </label>
+
+                        {/* High Contrast Mode */}
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="highContrast"
+                                onChange={(e) =>
+                                    document.body.classList.toggle('high-contrast', e.target.checked)
+                                }
+                                className="mr-2"
+                            />
+                            <label htmlFor="highContrast" className="text-sm text-gray-700">
+                                Enable High Contrast
+                            </label>
+                        </div>
+                    </div>
+                )}
 
                 {/* Mobile Hamburger Button */}
                 {!mobileMenuOpen && (
@@ -630,6 +746,20 @@ export default function Navbar() {
                             </button>
                         ))}
                     </div>
+
+                    <button
+                        onClick={() => {
+                            setSettingsExpanded(true);
+                            setExpandedCollection(null);
+                            setExpandedTrip(null);
+                            setLocations([]);
+                        }}
+                        className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
+                    >
+                        <i className="ri-settings-3-line text-xl mb-1"></i>
+                        <span className="text-xs">Settings</span>
+                    </button>
+
 
                     {/* Log Out */}
                     <div className="mt-auto p-4">

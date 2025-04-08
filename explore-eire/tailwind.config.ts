@@ -18,6 +18,9 @@ export default {
         highlight: 'var(--highlight-color)',
         dark: 'var(--dark-color)',
       },
+      fontSize: {
+        'user': 'var(--user-font-size)',
+      },
     },
   },
   plugins: [],

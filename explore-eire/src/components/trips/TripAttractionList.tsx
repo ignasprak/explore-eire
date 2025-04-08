@@ -51,6 +51,7 @@ export function TripAttractionList({
                     <div className="flex justify-between items-start">
                         <div>
                             <h4 className="font-semibold">{item.attractions.Name}</h4>
+
                             <p className="text-sm">{item.attractions.Address}</p>
                             {item.attractions.Url && (
                                 <a
@@ -63,7 +64,10 @@ export function TripAttractionList({
                                 </a>
                             )}
                         </div>
-                        <button className="text-gray-400 hover:text-red-500">
+                        <button
+                            onClick={() => onRemove(item)}
+                            className="text-sm text-red-400 hover:text-red-600"
+                        >
                             <i className="ri-close-line text-xl" />
                         </button>
                     </div>
