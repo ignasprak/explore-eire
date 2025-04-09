@@ -15,7 +15,7 @@ Clone this repository either through the GUI or git clone <insert-my-repository-
 
 Then do "cd explore-eire"
 
-Then do "npm install" or "yarn install"
+Then do "npm install" 
 
 Create a .env.local file in the root of the project and add the necessary environment variables for supabase and mapbox.
 
