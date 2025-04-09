@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { DropZone } from "./dropzone";
 import { supabase } from "@/app/lib/supabaseClient";
 
 interface TripItem {
