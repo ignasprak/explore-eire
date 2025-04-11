@@ -7,6 +7,7 @@ import { MapProvider } from '@/context/MapContext';
 import { CollectionsProvider } from "@/context/CollectionsContext";
 import { TripsProvider } from "@/context/TripsContext";
 import { SelectedAttractionProvider } from "@/context/SelectedAttractionContext";
+import 'ol/ol.css';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",

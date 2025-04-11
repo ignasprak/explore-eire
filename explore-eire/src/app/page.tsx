@@ -4,6 +4,7 @@ import Navbar from '../components/navbar';
 import Map from '../components/map';
 // import supabase client
 import { createClient } from '@supabase/supabase-js';
+import 'ol/ol.css';
 
 // log environment variables
 console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
