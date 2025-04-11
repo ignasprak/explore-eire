@@ -1,6 +1,6 @@
 'use server'
 
-import { supabaseServerClient } from '@lib/supabaseClient'
+import { supabaseServerClient } from '../lib/supabaseServerClient'
 import { revalidatePath } from 'next/cache'
 
 export async function createCollection(formData: FormData) {
@@ -14,5 +14,5 @@ export async function createCollection(formData: FormData) {
 
     if (error) throw new Error(error.message)
 
-    revalidatePath('/') // Re-fetch sidebar data if needed
+    revalidatePath('/')
 }

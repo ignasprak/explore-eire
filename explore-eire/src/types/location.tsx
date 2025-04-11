@@ -8,4 +8,5 @@ export interface Location {
     address: string;
     county: string;
     tags: string;
+    markerIcon?: string;
 }

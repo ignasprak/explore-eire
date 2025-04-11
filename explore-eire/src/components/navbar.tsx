@@ -12,6 +12,7 @@ import { useCollectionsContext } from "@/context/CollectionsContext";
 import { useTripsContext } from "@/context/TripsContext";
 import { useSelectedAttraction } from '@/context/SelectedAttractionContext';
 import { TripAttractionList } from "./trips/TripAttractionList";
+import type { Location } from "@/types/location";
 
 export const markerColors: Record<number, string> = {
     0: "map-marker-red.svg",
@@ -42,7 +43,6 @@ export default function Navbar() {
     const [groupedItems, setGroupedItems] = useState<Record<number, any[]>>({});
     const [allDays, setAllDays] = useState<number[]>([]);
 
-
     const handleCollectionClick = (collectionId: string) => {
         if (expandedCollection === collectionId) {
             setExpandedCollection(null);
@@ -56,24 +56,25 @@ export default function Navbar() {
         const selectedCollection = collections.find((c) => c.id === collectionId);
         if (!selectedCollection) return;
 
-        const attractions = selectedCollection.user_collections
+        const attractions: Location[] = selectedCollection.user_collections
             .map((uc) => uc.attractions)
             .filter(Boolean)
             .map((a) => ({
                 id: a.id,
-                Name: a.Name,
-                Address: a.Address,
-                County: a.County ?? '',
-                Telephone: a.Telephone ?? '',
-                Url: a.Url ?? '',
-                Tags: a.Tags ?? '',
-                Latitude: a.Latitude,
-                Longitude: a.Longitude,
+                name: a.name,
+                address: a.address,
+                county: a.county ?? '',
+                telephone: a.telephone ?? '',
+                url: a.url ?? '',
+                tags: a.tags ?? '',
+                latitude: a.latitude,
+                longitude: a.longitude,
             }));
 
         setLocations(attractions);
         setMobileMenuOpen(false);
     };
+
 
     const handleSignOut = async () => {
         const { error } = await supabase.auth.signOut();
@@ -173,16 +174,16 @@ export default function Navbar() {
             return;
         }
 
-        const attractions = updatedUserTrips.map((ut) => ({
+        const attractions: Location[] = updatedUserTrips.map((ut) => ({
             id: ut.attractions.id,
-            Name: ut.attractions.Name,
-            Address: ut.attractions.Address,
-            County: ut.attractions.County ?? '',
-            Telephone: ut.attractions.Telephone ?? '',
-            Url: ut.attractions.Url ?? '',
-            Tags: ut.attractions.Tags ?? '',
-            Latitude: ut.attractions.Latitude,
-            Longitude: ut.attractions.Longitude,
+            name: ut.attractions.Name,
+            address: ut.attractions.Address,
+            county: ut.attractions.County ?? '',
+            telephone: ut.attractions.Telephone ?? '',
+            url: ut.attractions.Url ?? '',
+            tags: ut.attractions.Tags ?? '',
+            latitude: ut.attractions.Latitude,
+            longitude: ut.attractions.Longitude,
             markerIcon: markerColors[ut.day ?? 0] || "map-marker-red.svg",
         }));
 
@@ -331,7 +332,7 @@ export default function Navbar() {
                                     setExpandedCollection(null);
                                     setExpandedTrip(trip.id);
 
-                                    const attractions = selectedTrip.user_trips
+                                    const attractions: Location[] = selectedTrip.user_trips
                                         .filter((ut) => ut.attractions)
                                         .map((ut) => {
                                             const a = ut.attractions;
@@ -339,14 +340,14 @@ export default function Navbar() {
 
                                             return {
                                                 id: a.id,
-                                                Name: a.Name,
-                                                Address: a.Address,
-                                                County: a.County ?? '',
-                                                Telephone: a.Telephone ?? '',
-                                                Url: a.Url ?? '',
-                                                Tags: a.Tags ?? '',
-                                                Latitude: a.Latitude,
-                                                Longitude: a.Longitude,
+                                                name: a.Name,
+                                                address: a.Address,
+                                                county: a.County ?? '',
+                                                telephone: a.Telephone ?? '',
+                                                url: a.Url ?? '',
+                                                tags: a.Tags ?? '',
+                                                latitude: a.Latitude,
+                                                longitude: a.Longitude,
                                                 markerIcon,
                                             };
                                         });
@@ -543,7 +544,6 @@ export default function Navbar() {
                             </div>
 
                             <div className="flex-1 overflow-y-auto pr-1 space-y-4">
-
 
                                 {allDays.map((day) => (
                                     <div key={day} className="mb-4 border-t pt-2">

@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import type { Collection, UserCollection } from '@/types/types';
 
-export default function CollectionsList({ collections }: { collections: any[] }) {
+export default function CollectionsList({ collections }: { collections: Collection[] }) {
     const [localCollections, setLocalCollections] = useState(collections);
 
     async function handleDeleteAttraction(locationId: string, collectionId: string) {
@@ -27,7 +28,7 @@ export default function CollectionsList({ collections }: { collections: any[] })
                         ? {
                             ...collection,
                             user_collections: collection.user_collections.filter(
-                                (item) => item.location_id !== locationId
+                                (item: UserCollection) => item.location_id !== locationId
                             ),
                         }
                         : collection

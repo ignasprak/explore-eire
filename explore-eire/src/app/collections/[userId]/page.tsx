@@ -1,44 +1,39 @@
 import Navbar from '../../../components/navbar';
 import { supabase } from '../../lib/supabaseClient';
 import CollectionsList from './CollectionsList';
+import { Collection } from '@/types/types';
 
 export async function generateStaticParams() {
-    const { data: users, error } = await supabase
-        .from('users')
-        .select('id');
+    const { data: users, error } = await supabase.from('users').select('id');
+    if (error || !users) return [];
 
-    if (error) {
-        console.error('Error fetching users:', error.message);
-        return [];
-    }
-
-    return users?.map((user) => ({ userId: user.id })) ?? [];
+    return users.map((user) => ({ userId: user.id }));
 }
 
-export default async function CollectionsPage({ params }: { params: { userId: string } }) {
+export default async function CollectionsPage({
+    params,
+}: {
+    params: Promise<{ userId: string }>;
+}) {
     const { userId } = await params;
-
-    if (!userId) {
-        return <p className="text-red-500">User ID is missing or invalid.</p>;
-    }
 
     const { data: collections, error } = await supabase
         .from('collections')
         .select(`
-      id,
-      name,
-      created_at,
-      user_collections (
-        location_id,
-        attractions (
-          id,
-          Name,
-          Address,
-          Url,
-          Telephone
-        )
+    id,
+    name,
+    created_at,
+    user_collections (
+      location_id,
+      attractions (
+        id,
+        Name,
+        Address,
+        Url,
+        Telephone
       )
-    `)
+    )
+  `)
         .eq('user_id', userId);
 
     if (error) {
@@ -46,8 +41,7 @@ export default async function CollectionsPage({ params }: { params: { userId: st
         return <p className="text-red-500">Failed to load collections.</p>;
     }
 
-
-    const formattedCollections = collections?.map((collection) => ({
+    const formattedCollections: Collection[] = (collections || []).map((collection) => ({
         ...collection,
         created_at: new Date(collection.created_at).toLocaleString('en-US', {
             year: 'numeric',
@@ -57,7 +51,12 @@ export default async function CollectionsPage({ params }: { params: { userId: st
             minute: 'numeric',
             second: 'numeric',
         }),
+        user_collections: (collection.user_collections || []).map((uc) => ({
+            ...uc,
+            attractions: Array.isArray(uc.attractions) ? uc.attractions[0] : uc.attractions,
+        })),
     }));
+
 
     return (
         <div>
@@ -69,3 +68,5 @@ export default async function CollectionsPage({ params }: { params: { userId: st
         </div>
     );
 }
+
+

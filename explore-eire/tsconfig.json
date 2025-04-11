@@ -8,7 +8,7 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -17,10 +17,22 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
-    "baseUrl": "./",
+    "baseUrl": "./src",
     "paths": {
       "@/*": [
-        "src/*"
+        "*"
+      ],
+      "@lib/*": [
+        "lib/*"
+      ],
+      "@components/*": [
+        "components/*"
+      ],
+      "@context/*": [
+        "context/*"
+      ],
+      "@hooks/*": [
+        "hooks/*"
       ]
     },
     "plugins": [

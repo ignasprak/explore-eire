@@ -9,6 +9,8 @@ import dynamic from "next/dynamic";
 import { useMap } from '@/context/MapContext';
 import { useCollectionsContext } from "@/context/CollectionsContext";
 import { useSwipeable } from 'react-swipeable';
+import { useSelectedAttraction } from "@/context/SelectedAttractionContext";
+
 
 // OpenLayers imports
 import "ol/ol.css";
@@ -24,7 +26,7 @@ import Point from "ol/geom/Point";
 import Zoom from "ol/control/Zoom";
 import OlSelect from 'ol/interaction/Select.js';
 import { Fill, Stroke, Text } from "ol/style";
-import { useSelectedAttraction } from "@/context/SelectedAttractionContext";
+
 
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
@@ -196,7 +198,6 @@ const Map = () => {
         onSwipedLeft: handleNext,
         onSwipedRight: handlePrevious,
         delta: 50, // min swipe distance in px
-        preventDefaultTouchmoveEvent: true,
         trackTouch: true,
         trackMouse: false,
     });
@@ -255,11 +256,10 @@ const Map = () => {
                 setHasMore(false);
             } else {
                 // Filter out duplicates using a Set
-                setLocations(prev => {
-                    const existingIds = new Set(prev.map(loc => loc.id)); // Track existing IDs
-                    const filteredData = newData.filter(loc => !existingIds.has(loc.id)); // Remove duplicates
-                    return [...prev, ...filteredData]; // Append only unique items
-                });
+                const existingIds = new Set(locations.map(loc => loc.id));
+                const filteredData = newData.filter(loc => !existingIds.has(loc.id));
+                setLocations([...locations, ...filteredData]);
+
             }
         } catch (err) {
             console.error("Error loading more locations:", err);
@@ -294,7 +294,13 @@ const Map = () => {
     // !!!!!!!!
     const fetchAllLocations = async () => {
         try {
-            const response = await fetch(`/api/locations?${queryParams.toString()}`); // there is a limit here !!!!!!!
+            const queryParams = new URLSearchParams({
+                search: searchQuery,
+                filters: selectedFilters.map(filter => filter.value).join(","),   // Multiple tags
+                counties: selectedCounties.map(county => county.value).join(","), // Multiple counties
+            });
+
+            const response = await fetch(`/api/locations?${queryParams.toString()}`);
             if (!response.ok) throw new Error("Failed to fetch all locations");
 
             const data = await response.json();
@@ -491,14 +497,14 @@ const Map = () => {
             const isSelected = selectedLocation && selectedLocation.id === location.id;
 
             const feature = new Feature({
-                geometry: new Point(fromLonLat([location.Longitude, location.Latitude])),
+                geometry: new Point(fromLonLat([location.longitude, location.latitude])),
                 id: location.id,
-                name: location.Name,
-                url: location.Url,
-                telephone: location.Telephone,
-                address: location.Address,
-                tags: location.Tags,
-                county: location.County,
+                name: location.name,
+                url: location.url,
+                telephone: location.telephone,
+                address: location.address,
+                tags: location.tags,
+                county: location.county,
             });
 
             // Adjust style based on selection
@@ -518,7 +524,7 @@ const Map = () => {
                     }),
                     text: isSelected
                         ? new Text({
-                            text: location.Name,
+                            text: location.name,
                             offsetY: -20,
                             font: "bold 14px Arial",
                             fill: new Fill({ color: "#000" }),
@@ -562,8 +568,8 @@ const Map = () => {
         selectInteraction.on("select", (event) => {
             const feature = event.selected[0];
 
-            if (feature) {
-                setSelectedFeature(feature);
+            if (feature && feature.getGeometry() instanceof Point) {
+                setSelectedFeature(feature as Feature<Point>);
                 handleSelectLocation(feature.getProperties());
             } else {
                 setSelectedFeature(null);
@@ -762,12 +768,12 @@ const Map = () => {
 
                         {/* buttons at the bottom */}
                         <div className="mt-4 flex justify-between">
-                            <button
+                            {/* <button
                                 onClick={() => console.log("Favorited:", selectedLocation.name)}
                                 className="flex-1 bg-gray-200 hover:bg-red-500 text-gray-700 hover:text-white py-2 rounded-lg mr-2"
                             >
                                 <i className="ri-car-line text-xl"></i> Add to Trip
-                            </button>
+                            </button> */}
 
                             <button
                                 onClick={() => setIsCollectionPopupOpen(true)}
@@ -799,7 +805,7 @@ const Map = () => {
                                 <button
                                     onClick={async () => {
                                         if (newCollectionName.trim()) {
-                                            await createCollection(newCollectionName.trim(), selectedLocation);
+                                            await createCollection(newCollectionName.trim());
                                             setNewCollectionName('');
                                             setIsCollectionPopupOpen(false);
                                         } else {

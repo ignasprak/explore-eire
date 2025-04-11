@@ -8,15 +8,25 @@ export type Trip = {
     id: string;
     name: string;
     created_at: string;
-    user_trips?: {
-        location_id: string;
-        attractions: {
-            id: string;
-            Name: string;
-            Address: string;
-            Url?: string;
-        };
-    }[];
+    user_trips?: UserTrip[];
+};
+
+export type UserTrip = {
+    trip_id: string;
+    location_id: string;
+    day?: number;
+    position?: number;
+    attractions: {
+        id: string;
+        Name: string;
+        Address: string;
+        Url?: string;
+        Telephone?: string;
+        County?: string;
+        Latitude?: number;
+        Longitude?: number;
+        Tags?: string;
+    };
 };
 
 type TripsContextType = {
@@ -32,6 +42,7 @@ const TripsContext = createContext<TripsContextType>({
     refetchTrips: async () => { },
     deleteTrip: async () => { },
 });
+
 
 export const TripsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
