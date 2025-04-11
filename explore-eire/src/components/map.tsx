@@ -11,7 +11,6 @@ import { useCollectionsContext } from "@/context/CollectionsContext";
 import { useSwipeable } from 'react-swipeable';
 import { useSelectedAttraction } from "@/context/SelectedAttractionContext";
 
-
 // OpenLayers imports
 import "ol/ol.css";
 import { Map as OlMap, View } from "ol";
@@ -26,7 +25,6 @@ import Point from "ol/geom/Point";
 import Zoom from "ol/control/Zoom";
 import OlSelect from 'ol/interaction/Select.js';
 import { Fill, Stroke, Text } from "ol/style";
-
 
 const Select = dynamic(() => import("react-select"), { ssr: false });
 

@@ -535,7 +535,7 @@ export default function Navbar() {
                             <div className="flex justify-start mb-4">
                                 <button
                                     onClick={handleAddNewDay}
-                                    className="text-gray-600 hover:text-gray-800 transition disabled:opacity-50"
+                                    className="text-gray-600 hover:text-gray-800"
                                     disabled={allDays.length >= 7}
                                 >
                                     <i className="ri-sun-line" /> New Day

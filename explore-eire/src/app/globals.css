@@ -1,8 +1,8 @@
+@import 'ol/ol.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://jeffreymaniac.github.io/OpenDyslexic-font-for-css/opendyslexic.css');
 
 :root {
   --background: #ffffff;
@@ -19,10 +19,6 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
-}
-
-.dyslexia-font {
-  font-family: 'OpenDyslexic', Arial, sans-serif;
 }
 
 :focus {
