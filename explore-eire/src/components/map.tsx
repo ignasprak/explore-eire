@@ -153,7 +153,7 @@ const Map = () => {
     const { locations, setLocations, focusOnLocation } = useMap();
     const { selectedAttraction } = useSelectedAttraction();
 
-    const normalizeLocation = (loc: any) => ({
+    const normaliseLocation = (loc: any) => ({
         id: loc.id,
         name: loc.name ?? loc.Name,
         county: loc.county ?? loc.County,
@@ -163,6 +163,7 @@ const Map = () => {
         tags: loc.tags ?? loc.Tags,
         latitude: loc.latitude ?? loc.Latitude,
         longitude: loc.longitude ?? loc.Longitude,
+        markerIcon: loc.markerIcon ?? "map-marker-red2.svg",
     });
 
     // carousel
@@ -175,21 +176,21 @@ const Map = () => {
 
         const index = locations.findIndex((loc) => loc.id === location.id);
         setCurrentIndex(index);
-        setSelectedLocation(normalizeLocation(location));
+        setSelectedLocation(normaliseLocation(location));
     };
 
     const handleNext = () => {
         if (currentIndex === null || locations.length === 0) return;
         const nextIndex = (currentIndex + 1) % locations.length;
         setCurrentIndex(nextIndex);
-        setSelectedLocation(normalizeLocation(locations[nextIndex]));
+        setSelectedLocation(normaliseLocation(locations[nextIndex]));
     };
 
     const handlePrevious = () => {
         if (currentIndex === null || locations.length === 0) return;
         const prevIndex = (currentIndex - 1 + locations.length) % locations.length;
         setCurrentIndex(prevIndex);
-        setSelectedLocation(normalizeLocation(locations[prevIndex]));
+        setSelectedLocation(normaliseLocation(locations[prevIndex]));
     };
 
     const swipeHandlers = useSwipeable({
@@ -221,12 +222,12 @@ const Map = () => {
             return;
         }
 
-        const normalized = normalizeLocation(selectedAttraction);
-        setSelectedLocation(normalized);
+        const normalised = normaliseLocation(selectedAttraction);
+        setSelectedLocation(normalised);
 
-        if (map && normalized.latitude && normalized.longitude) {
+        if (map && normalised.latitude && normalised.longitude) {
             map.getView().animate({
-                center: fromLonLat([normalized.longitude, normalized.latitude]),
+                center: fromLonLat([normalised.longitude, normalised.latitude]),
                 zoom: 10,
                 duration: 500,
             });
@@ -234,14 +235,14 @@ const Map = () => {
     }, [selectedAttraction, locations, map]);
 
     const loadMoreLocations = async () => {
-        if (!hasMore) return; // Stop fetching if no more locations
+        if (!hasMore) return;
 
         try {
             const queryParams = new URLSearchParams({
                 search: searchQuery,
                 filters: selectedFilters.map(filter => filter.value).join(","),
                 counties: selectedCounties.map(county => county.value).join(","),
-                offset: locations.length.toString(), // Pagination offset
+                offset: locations.length.toString(),
                 limit: "20",
             });
 
@@ -253,16 +254,20 @@ const Map = () => {
             if (newData.length === 0) {
                 setHasMore(false);
             } else {
-                // Filter out duplicates using a Set
                 const existingIds = new Set(locations.map(loc => loc.id));
                 const filteredData = newData.filter(loc => !existingIds.has(loc.id));
-                setLocations([...locations, ...filteredData]);
 
+                // normalise every location
+                const normalisedData = filteredData.map((loc: any) => normaliseLocation(loc));
+
+                setLocations([...locations, ...normalisedData]);
             }
         } catch (err) {
             console.error("Error loading more locations:", err);
         }
     };
+
+
 
     const toggleDropdown = (id: string) => {
         setDropdownOpenId((prev) => (prev === id ? null : id)); // Close if open, otherwise open
@@ -282,7 +287,10 @@ const Map = () => {
             if (!response.ok) throw new Error("Failed to fetch locations");
 
             const data = await response.json();
-            setLocations(data); // Update locations on success
+            const dataWithMarkers = data.map((loc: any) => normaliseLocation(loc));
+            setLocations(dataWithMarkers);
+
+
         } catch (err) {
             console.error("Error fetching locations:", err);
             setLocations([]); // Clear locations on error
@@ -302,7 +310,9 @@ const Map = () => {
             if (!response.ok) throw new Error("Failed to fetch all locations");
 
             const data = await response.json();
-            setLocations(data);
+            const normalisedData = data.map((loc: any) => normaliseLocation(loc));
+            setLocations(normalisedData);
+
         } catch (err) {
             console.error("Error fetching all locations:", err);
             setLocations([]);
@@ -370,6 +380,8 @@ const Map = () => {
         locations.forEach((location) => {
             const isSelected = selectedLocation && selectedLocation.id === location.id;
 
+            console.log("Marker icon for location 1:", location.name, "→", location.markerIcon);
+
             const feature = new Feature({
                 geometry: new Point(fromLonLat([location.longitude, location.latitude])),
                 id: location.id,
@@ -385,13 +397,14 @@ const Map = () => {
                 new Style({
                     image: new Icon({
                         src: location.markerIcon
-                            ? `/markers/${location.markerIcon}`
-                            : "map-marker-red2.svg", // fallback
+                            ? `/images/markers/${location.markerIcon}`
+                            : `/images/markers/map-marker-red2.svg`,
                         scale: isSelected ? 0.085 : 0.035,
                         anchor: [0.5, 1],
                         anchorXUnits: "fraction",
                         anchorYUnits: "fraction",
                     }),
+
 
                     text: isSelected
                         ? new Text({
@@ -494,6 +507,8 @@ const Map = () => {
         locations.forEach((location) => {
             const isSelected = selectedLocation && selectedLocation.id === location.id;
 
+            console.log("Marker icon for location2:", location.name, "→", location.markerIcon);
+
             const feature = new Feature({
                 geometry: new Point(fromLonLat([location.longitude, location.latitude])),
                 id: location.id,
@@ -510,16 +525,14 @@ const Map = () => {
                 new Style({
                     image: new Icon({
                         src: location.markerIcon
-                            ? `/markers/${location.markerIcon}`
-                            : isSelected
-                                ? "/markers/map-marker-red.svg"
-                                : "/markers/map-marker-red2.svg",
-
-                        scale: isSelected ? 0.085 : 0.035, // Larger selected marker
+                            ? `/images/markers/${location.markerIcon}`
+                            : `/images/markers/map-marker-red2.svg`,
+                        scale: isSelected ? 0.085 : 0.035,
                         anchor: [0.5, 1],
                         anchorXUnits: "fraction",
                         anchorYUnits: "fraction",
                     }),
+
                     text: isSelected
                         ? new Text({
                             text: location.name,
