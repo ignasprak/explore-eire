@@ -154,6 +154,7 @@ const Map = () => {
     const { trips, addToTrip } = useTripsContext();
     const [isTripPopupOpen, setIsTripPopupOpen] = useState(false);
 
+    // making everything nice and normal for future use, no more silly business
     const cleanLocData = (loc: any) => ({
         id: loc.id,
         name: loc.name ?? loc.Name,
@@ -179,7 +180,7 @@ const Map = () => {
         setSelectedLocation(cleanLocData(location));
     };
 
-
+    // extended carousel
     const handleNext = () => {
         if (currentIndex === null || locations.length === 0) return;
         const nextIndex = (currentIndex + 1) % locations.length;
@@ -187,6 +188,7 @@ const Map = () => {
         setSelectedLocation(cleanLocData(locations[nextIndex]));
     };
 
+    // extended carousel that goes the opposite way
     const handlePrevious = () => {
         if (currentIndex === null || locations.length === 0) return;
         const prevIndex = (currentIndex - 1 + locations.length) % locations.length;
@@ -715,9 +717,7 @@ const Map = () => {
                 )
             }
             {/* Attraction Sidebar (Popup) */}
-
             {
-
                 selectedLocation && (
                     <div className="hidden md:block absolute top-4 right-8 h-auto w-1/3 bg-white shadow-md p-2 overflow-y-auto rounded z-40">
                         <div className="flex items-center justify-between space-x-2">

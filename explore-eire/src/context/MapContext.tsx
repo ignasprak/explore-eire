@@ -14,6 +14,7 @@ type MapContextType = {
 export const MapProvider = ({ children }: { children: ReactNode }) => {
     const [locations, setLocations] = useState<Location[]>([]);
 
+    // please never show up again
     const focusOnLocation = (lat: number, lng: number) => {
         console.warn("focusOnLocation called, but map instance not shared here.");
     };

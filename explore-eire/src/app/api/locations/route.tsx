@@ -16,6 +16,7 @@ export async function GET(req: Request) {
             return NextResponse.json([], { status: 200 });
         }
 
+        // please i hope these ilike functions work like a charm
         if (searchQuery) {
             query = query.ilike("Name", `%${searchQuery}%`);
         }

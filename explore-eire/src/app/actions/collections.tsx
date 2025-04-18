@@ -1,5 +1,5 @@
 'use server'
-
+// server-side collection manipultor
 import { supabaseServerClient } from '../lib/supabaseServerClient'
 import { revalidatePath } from 'next/cache'
 

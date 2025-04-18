@@ -111,6 +111,7 @@ export function useCollections() {
             console.error('Error creating collection:', error.message);
             setCollections((prev) => prev.filter((c) => c.id !== tempId));
         } else {
+            // yippeee
             console.log('Collection created successfully:', data);
             setCollections((prev) =>
                 prev.map((c) => (c.id === tempId ? { ...data[0], items: [] } : c))

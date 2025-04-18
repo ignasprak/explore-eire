@@ -411,8 +411,8 @@ export default function Navbar() {
                                     <button
                                         onClick={async () => {
                                             if (!expandedCollection) return;
-                                            const isConfirmed = window.confirm("Are you sure you want to delete this collection?");
-                                            if (!isConfirmed) return;
+                                            const ok = await confirm("Are you sure you want to delete this collection?");
+                                            if (!ok) return;
                                             await deleteCollection(expandedCollection);
                                             setExpandedCollection(null);
                                             setExpandedTrip(null);
@@ -538,8 +538,8 @@ export default function Navbar() {
                                     {/* Delete Trip */}
                                     <button
                                         onClick={async () => {
-                                            const isConfirmed = window.confirm("Are you sure you want to delete this trip?");
-                                            if (!isConfirmed) return;
+                                            const ok = await confirm("Delete this trip?");
+                                            if (!ok) return;
                                             await deleteTrip(expandedTrip!);
                                             setExpandedTrip(null);
                                             await refetchTrips();

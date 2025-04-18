@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/app/lib/supabaseClient';
-
+// supabase check in for adding ot collection
 export async function POST(req: NextRequest) {
     const { collectionId, locationId } = await req.json();
 
