@@ -21,7 +21,6 @@ export default function CollectionsList({ collections }: { collections: Collecti
             alert('Failed to delete the attraction. Please try again.');
         } else {
             alert('Attraction deleted successfully!');
-            // Update local state to remove the deleted item
             setLocalCollections((prevCollections) =>
                 prevCollections.map((collection) =>
                     collection.id === collectionId
@@ -53,7 +52,6 @@ export default function CollectionsList({ collections }: { collections: Collecti
             alert('Failed to delete the collection. Please try again.');
         } else {
             alert('Collection deleted successfully!');
-            // Update local state to remove the deleted collection
             setLocalCollections((prevCollections) =>
                 prevCollections.filter((collection) => collection.id !== collectionId)
             );

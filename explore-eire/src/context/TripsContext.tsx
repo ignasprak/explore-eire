@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/app/lib/supabaseClient';
 import { useAuth } from '@/app/lib/authContext';
+import type { Location } from '@/types/location';
 
 export type Trip = {
     id: string;
@@ -34,6 +35,7 @@ type TripsContextType = {
     createTrip: (name: string) => Promise<void>;
     refetchTrips: () => Promise<void>;
     deleteTrip: (tripId: string) => Promise<void>;
+    addToTrip: (tripId: string, location: Location, day?: number) => Promise<void>;
 };
 
 const TripsContext = createContext<TripsContextType>({
@@ -41,8 +43,8 @@ const TripsContext = createContext<TripsContextType>({
     createTrip: async () => { },
     refetchTrips: async () => { },
     deleteTrip: async () => { },
+    addToTrip: async () => { },
 });
-
 
 export const TripsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
@@ -103,12 +105,39 @@ export const TripsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const addToTrip = async (tripId: string, location: Location, day = 0) => {
+        if (!user) return;
+
+        const current = trips
+            .find(t => t.id === tripId)
+            ?.user_trips
+            .filter(ut => (ut.day ?? 0) === day);
+
+        const position = (current?.length ?? 0);
+
+        const { error } = await supabase
+            .from('user_trips')
+            .insert([{
+                trip_id: tripId,
+                location_id: location.id,
+                day,
+                position
+            }]);
+
+        if (error) {
+            console.error('Failed to add to trip:', error.message);
+            return;
+        }
+
+        await fetchTrips();
+    };
+
     useEffect(() => {
         fetchTrips();
     }, [user]);
 
     return (
-        <TripsContext.Provider value={{ trips, createTrip, refetchTrips: fetchTrips, deleteTrip }}>
+        <TripsContext.Provider value={{ trips, createTrip, refetchTrips: fetchTrips, deleteTrip, addToTrip }}>
             {children}
         </TripsContext.Provider>
     );

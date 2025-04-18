@@ -39,8 +39,6 @@ export function TripAttractionItem({
                     <i className="ri-close-line text-xl"></i>
                 </button>
             </div>
-
-            {/* Move to another day */}
             <div className="text-sm text-gray-600">
                 Move to:
                 <select

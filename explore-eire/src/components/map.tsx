@@ -1,17 +1,16 @@
 "use client";
 
+// application imports 
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/lib/authContext";
-import { supabase } from "@/app/lib/supabaseClient";
-import { useCollections } from '@/hooks/useCollections';
-import { Location } from '@/types/location';
 import dynamic from "next/dynamic";
 import { useMap } from '@/context/MapContext';
 import { useCollectionsContext } from "@/context/CollectionsContext";
 import { useSwipeable } from 'react-swipeable';
 import { useSelectedAttraction } from "@/context/SelectedAttractionContext";
+import { useTripsContext } from "@/context/TripsContext";
 
-// OpenLayers imports
+// ol imports
 import "ol/ol.css";
 import { Map as OlMap, View } from "ol";
 import TileLayer from "ol/layer/Tile";
@@ -26,9 +25,10 @@ import Zoom from "ol/control/Zoom";
 import OlSelect from 'ol/interaction/Select.js';
 import { Fill, Stroke, Text } from "ol/style";
 
+// pretty drop down selection boxes (and search)
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
-// Options for filters
+// all the options for tags based on the values in the database from failte.ie dataset
 const tagOptions = [
     { value: "Abbeys and Monastery", label: "Abbeys and Monastery" },
     { value: "Activity", label: "Activity" },
@@ -85,6 +85,7 @@ const tagOptions = [
     { value: "Zip Lining", label: "Zip Lining" },
 ];
 
+// couties in Ireland
 const countyOptions = [
     { value: "Carlow", label: "Carlow" },
     { value: "Cavan", label: "Cavan" },
@@ -114,6 +115,7 @@ const countyOptions = [
     { value: "Wicklow", label: "Wicklow" },
 ];
 
+// custom styles
 const customStyles = {
     control: (provided: any) => ({
         ...provided,
@@ -136,14 +138,12 @@ const Map = () => {
     const [selectedFilters, setSelectedFilters] = useState<{ value: string; label: string }[]>([]);
     const [selectedCounties, setSelectedCounties] = useState<{ value: string; label: string }[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
-    const [dropdownOpenId, setDropdownOpenId] = useState<string | null>(null); // track which attraction’s dropdown is open
-    const dropdownRef = useRef<HTMLDivElement | null>(null); //handles clicking outside of collection popup    
+    const [dropdownOpenId, setDropdownOpenId] = useState<string | null>(null); // for tracking which attractions dropdown is openn
+    const dropdownRef = useRef<HTMLDivElement | null>(null); //handles clicking outside of collection poup
     const [newCollectionName, setNewCollectionName] = useState('');
     const [isListOpen, setIsListOpen] = useState<boolean>(false);
     const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
-    const [selectedGridId, setSelectedGridId] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement | null>(null);
-    const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [isCollectionPopupOpen, setIsCollectionPopupOpen] = useState(false);
@@ -151,9 +151,10 @@ const Map = () => {
     const { createCollection, addToCollection, collections, deleteCollection } = useCollectionsContext();
     const [currentIndex, setCurrentIndex] = useState<number | null>(null);
     const { locations, setLocations, focusOnLocation } = useMap();
-    const { selectedAttraction } = useSelectedAttraction();
+    const { trips, addToTrip } = useTripsContext();
+    const [isTripPopupOpen, setIsTripPopupOpen] = useState(false);
 
-    const normaliseLocation = (loc: any) => ({
+    const cleanLocData = (loc: any) => ({
         id: loc.id,
         name: loc.name ?? loc.Name,
         county: loc.county ?? loc.County,
@@ -166,77 +167,52 @@ const Map = () => {
         markerIcon: loc.markerIcon ?? "map-marker-red2.svg",
     });
 
-    // carousel
+    // carousel for mobile view
     const handleSelectLocation = (location: any) => {
         if (!location) {
             setSelectedLocation(null);
             setCurrentIndex(null);
             return;
         }
-
         const index = locations.findIndex((loc) => loc.id === location.id);
         setCurrentIndex(index);
-        setSelectedLocation(normaliseLocation(location));
+        setSelectedLocation(cleanLocData(location));
     };
+
 
     const handleNext = () => {
         if (currentIndex === null || locations.length === 0) return;
         const nextIndex = (currentIndex + 1) % locations.length;
         setCurrentIndex(nextIndex);
-        setSelectedLocation(normaliseLocation(locations[nextIndex]));
+        setSelectedLocation(cleanLocData(locations[nextIndex]));
     };
 
     const handlePrevious = () => {
         if (currentIndex === null || locations.length === 0) return;
         const prevIndex = (currentIndex - 1 + locations.length) % locations.length;
         setCurrentIndex(prevIndex);
-        setSelectedLocation(normaliseLocation(locations[prevIndex]));
+        setSelectedLocation(cleanLocData(locations[prevIndex]));
     };
 
     const swipeHandlers = useSwipeable({
         onSwipedLeft: handleNext,
         onSwipedRight: handlePrevious,
-        delta: 50, // min swipe distance in px
+        delta: 50,
         trackTouch: true,
         trackMouse: false,
     });
 
     const handleScroll = () => {
         if (!scrollRef.current) return;
-
         const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-
-        // When user reaches bottom, load more data
         if (scrollTop + clientHeight >= scrollHeight - 10 && !loading) {
             setLoading(true);
             loadMoreLocations();
         }
     };
 
-    useEffect(() => {
-        if (!selectedAttraction) return;
-
-        const exists = locations.some((loc) => loc.id === selectedAttraction.id);
-
-        if (!exists) {
-            return;
-        }
-
-        const normalised = normaliseLocation(selectedAttraction);
-        setSelectedLocation(normalised);
-
-        if (map && normalised.latitude && normalised.longitude) {
-            map.getView().animate({
-                center: fromLonLat([normalised.longitude, normalised.latitude]),
-                zoom: 10,
-                duration: 500,
-            });
-        }
-    }, [selectedAttraction, locations, map]);
-
     const loadMoreLocations = async () => {
         if (!hasMore) return;
-
         try {
             const queryParams = new URLSearchParams({
                 search: searchQuery,
@@ -245,80 +221,64 @@ const Map = () => {
                 offset: locations.length.toString(),
                 limit: "20",
             });
-
             const response = await fetch(`/api/locations?${queryParams.toString()}`);
             if (!response.ok) throw new Error("Failed to fetch more locations");
-
             const newData = await response.json();
-
             if (newData.length === 0) {
                 setHasMore(false);
             } else {
                 const existingIds = new Set(locations.map(loc => loc.id));
                 const filteredData = newData.filter(loc => !existingIds.has(loc.id));
-
-                // normalise every location
-                const normalisedData = filteredData.map((loc: any) => normaliseLocation(loc));
-
+                const normalisedData = filteredData.map((loc: any) => cleanLocData(loc));
                 setLocations([...locations, ...normalisedData]);
             }
         } catch (err) {
             console.error("Error loading more locations:", err);
         }
     };
-
-
-
     const toggleDropdown = (id: string) => {
-        setDropdownOpenId((prev) => (prev === id ? null : id)); // Close if open, otherwise open
+        setDropdownOpenId((prev) => (prev === id ? null : id));
     };
 
-    // Fetch new locations on filter change
+    // fetch locations when the filters change
     const fetchLocations = async () => {
         try {
             const queryParams = new URLSearchParams({
                 search: searchQuery,
-                filters: selectedFilters.map(filter => filter.value).join(","),   // Multiple tags
-                counties: selectedCounties.map(county => county.value).join(","), // Multiple counties
+                filters: selectedFilters.map(filter => filter.value).join(","),
+                counties: selectedCounties.map(county => county.value).join(","),
             });
-
             const response = await fetch(`/api/locations?${queryParams.toString()}`);
-
             if (!response.ok) throw new Error("Failed to fetch locations");
-
             const data = await response.json();
-            const dataWithMarkers = data.map((loc: any) => normaliseLocation(loc));
+            const dataWithMarkers = data.map((loc: any) => cleanLocData(loc));
             setLocations(dataWithMarkers);
-
-
         } catch (err) {
             console.error("Error fetching locations:", err);
-            setLocations([]); // Clear locations on error
+            setLocations([]);
         }
     };
 
-    // !!!!!!!!
-    const fetchAllLocations = async () => {
+    // !!!!maybe consider redoing this or gettinf rid of it, since I am doing show all attractions
+    const getAllMarkers = async () => {
         try {
             const queryParams = new URLSearchParams({
                 search: searchQuery,
-                filters: selectedFilters.map(filter => filter.value).join(","),   // Multiple tags
-                counties: selectedCounties.map(county => county.value).join(","), // Multiple counties
+                filters: selectedFilters.map(filter => filter.value).join(","),
+                counties: selectedCounties.map(county => county.value).join(","),
             });
-
             const response = await fetch(`/api/locations?${queryParams.toString()}`);
             if (!response.ok) throw new Error("Failed to fetch all locations");
-
             const data = await response.json();
-            const normalisedData = data.map((loc: any) => normaliseLocation(loc));
+            const normalisedData = data.map((loc: any) => cleanLocData(loc));
             setLocations(normalisedData);
-
         } catch (err) {
             console.error("Error fetching all locations:", err);
             setLocations([]);
         }
     };
 
+    // takes care of clicking inside and outside of attractions popup
     useEffect(() => {
         if (
             searchQuery ||
@@ -326,38 +286,22 @@ const Map = () => {
             selectedCounties.length > 0
         ) {
             if (selectedFilters.some(filter => filter.value === "All")) {
-                // !!!!!!!
-                fetchAllLocations(); // fetch all attractions if "Show all attractions" is selected
+                getAllMarkers();
             } else {
-                fetchLocations(); // fetch filtered locations
+                fetchLocations();
             }
         } else {
-            setLocations([]); // reset locations if no filters are selected
+            setLocations([]);
         }
     }, [searchQuery, selectedFilters, selectedCounties]);
 
-    useEffect(() => {
-        if (
-            searchQuery ||
-            selectedFilters.length > 0 ||
-            selectedCounties.length > 0
-        ) {
-            fetchLocations();
-        } else {
-            setLocations([]); // Clear locations if no filters are applied
-        }
-    }, [searchQuery, selectedFilters, selectedCounties]);
-
-    // handles clicking outside and inside the collections popup
     useEffect(() => {
         const handleClick = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setDropdownOpenId(null); // Close dropdown if clicking outside
+                setDropdownOpenId(null);
             }
         };
-
         document.addEventListener("mousedown", handleClick);
-
         return () => {
             document.removeEventListener("mousedown", handleClick);
         };
@@ -366,22 +310,18 @@ const Map = () => {
     useEffect(() => {
         if (!map || locations.length === 0) return;
 
-        console.log("Marker render effect triggered");
-        console.log("Map is ready:", map);
-        console.log("Locations:", locations);
+        // marker and map testing
+        console.log("1. Markesr are being rendered now!!!");
+        console.log("2. Map is ready and initialised: ", map);
+        console.log("3. Locations have loaded in: ", locations);
 
-        // Remove previous vector layers
+        // take away previous vector layers
         const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get("highlight"));
         existingVectorLayers.forEach(layer => map.removeLayer(layer));
-
         const vectorSource = new VectorSource();
         let selectedFeature: Feature<Point> | null = null;
-
         locations.forEach((location) => {
             const isSelected = selectedLocation && selectedLocation.id === location.id;
-
-            console.log("Marker icon for location 1:", location.name, "→", location.markerIcon);
-
             const feature = new Feature({
                 geometry: new Point(fromLonLat([location.longitude, location.latitude])),
                 id: location.id,
@@ -392,7 +332,7 @@ const Map = () => {
                 tags: location.tags,
                 county: location.county,
             });
-
+            // would be nice to eventually add in marker clustering for accessibility purposes
             feature.setStyle(
                 new Style({
                     image: new Icon({
@@ -404,8 +344,6 @@ const Map = () => {
                         anchorXUnits: "fraction",
                         anchorYUnits: "fraction",
                     }),
-
-
                     text: isSelected
                         ? new Text({
                             text: location.name,
@@ -418,22 +356,17 @@ const Map = () => {
                     zIndex: isSelected ? 1000 : 1,
                 })
             );
-
             if (isSelected) {
                 selectedFeature = feature;
             }
-
             vectorSource.addFeature(feature);
         });
-
         const vectorLayer = new VectorLayer({
             source: vectorSource,
             zIndex: 5,
         });
-
         vectorLayer.set("highlight", true);
         map.addLayer(vectorLayer);
-
         if (selectedFeature) {
             const highlightLayer = new VectorLayer({
                 source: new VectorSource({ features: [selectedFeature] }),
@@ -442,9 +375,7 @@ const Map = () => {
             highlightLayer.set("highlight", true);
             map.addLayer(highlightLayer);
         }
-
     }, [map, locations]);
-
 
     useEffect(() => {
         const handleScroll = () => {
@@ -452,25 +383,23 @@ const Map = () => {
                 loadMoreLocations();
             }
         };
-
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, [hasMore]);
-
 
     const handleCreateCollection = async () => {
         const collectionName = prompt('Enter a name for your new collection:');
         if (!collectionName) return;
 
-        await createCollection(collectionName); // Pass name to the hook
+        await createCollection(collectionName); // pass name to the hook
     };
 
-    // Call fetchLocations inside useEffect
+    // calls fetchLocations() inside when filters are set
     useEffect(() => {
         fetchLocations();
     }, [searchQuery, selectedFilters, selectedCounties]);
 
-    // Initialize OpenLayers map
+    // initialise the openlayers map
     useEffect(() => {
         if (!mapContainerRef.current) return;
 
@@ -492,22 +421,23 @@ const Map = () => {
         };
     }, []);
 
-    // Update markers on location change
+    // update the markers when there is a location change
     useEffect(() => {
         if (!map) return;
 
-        // Remove any old vector layers
+        // take away previous vector layers (copied from above, maybe make a function for it???)
         const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get("highlight"));
         existingVectorLayers.forEach(layer => map.removeLayer(layer));
 
-        // Create vector source for markers
+        // create vector source for markers
         const vectorSource = new VectorSource();
-        let selectedFeature: Feature<Point> | null = null; // Keep track of selected marker
+        let selectedFeature: Feature<Point> | null = null; // keep track of selected marker
 
         locations.forEach((location) => {
             const isSelected = selectedLocation && selectedLocation.id === location.id;
 
-            console.log("Marker icon for location2:", location.name, "→", location.markerIcon);
+            // testing purposes for markers, not showing up on filter change
+            console.log("Marker icon for location2:", location.name, "->", location.markerIcon);
 
             const feature = new Feature({
                 geometry: new Point(fromLonLat([location.longitude, location.latitude])),
@@ -520,7 +450,7 @@ const Map = () => {
                 county: location.county,
             });
 
-            // Adjust style based on selection
+            // adjust style based on selection
             feature.setStyle(
                 new Style({
                     image: new Icon({
@@ -541,38 +471,38 @@ const Map = () => {
                             fill: new Fill({ color: "#000" }),
                             stroke: new Stroke({ color: "#fff", width: 3 }),
                         })
-                        : undefined, // Label only for selected
-                    zIndex: isSelected ? 1000 : 1, // Higher z-index for selected marker
+                        : undefined, // only for selcted
+                    zIndex: isSelected ? 1000 : 1, // make higher z for visibility sake
                 })
             );
 
             if (isSelected) {
-                selectedFeature = feature; // Store selected feature
+                selectedFeature = feature; // store selected feature
             }
 
             vectorSource.addFeature(feature);
         });
 
-        // Create a new layer for updated markers
+        // create a new later for updated amrkers
         const vectorLayer = new VectorLayer({
             source: vectorSource,
-            zIndex: 5, // Lower zIndex for all markers
+            zIndex: 5, // lower z index for everhy marker
         });
 
         vectorLayer.set("highlight", true);
         map.addLayer(vectorLayer);
 
-        // Ensure selected marker is always on top
+        // ensure selcetd marker is alwaus on top
         if (selectedFeature) {
             const highlightLayer = new VectorLayer({
                 source: new VectorSource({ features: [selectedFeature] }),
-                zIndex: 1001, // Highest zIndex to be above all
+                zIndex: 1001, // very big z index
             });
             highlightLayer.set("highlight", true);
             map.addLayer(highlightLayer);
         }
 
-        // Marker selection interaction
+        // marker selection interaction
         const selectInteraction = new OlSelect();
         map.addInteraction(selectInteraction);
 
@@ -587,19 +517,17 @@ const Map = () => {
                 setSelectedLocation(null);
             }
         });
-
         return () => {
             map.removeInteraction(selectInteraction);
         };
-    }, [map, locations, selectedLocation]); // Re-run when selectedLocation changes
+    }, [map, locations, selectedLocation]); // redo when selectedLcoation changes
 
     return (
         <div className="relative h-screen ml-auto z-10">
             {/* Filter section */}
             {/* Map UI Controls */}
             <div className="absolute top-4 left-[5rem] right-4 md:left-28 md:w-[20rem] z-50 space-y-4">
-
-                {/* Search Input - Always visible */}
+                {/* Search Input */}
                 <div className="bg-white p-3 shadow-lg rounded-full w-full flex items-center">
                     <input
                         type="text"
@@ -609,8 +537,7 @@ const Map = () => {
                         placeholder="Search for attractions..."
                     />
                 </div>
-
-                {/* Filters - Only shown on medium and up */}
+                {/* Filters, only on medium and up */}
                 <div className="hidden md:block bg-white p-4 shadow-lg rounded w-full space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Tag:</label>
@@ -644,16 +571,13 @@ const Map = () => {
                     </div>
                 </div>
             </div>
-
             {/* Map Container */}
             <div ref={mapContainerRef} className="w-full h-full" />
-
-            {/* Mobile Popup for Selected Attraction */}
+            {/* Mobile Popup for Selected Attraction (do I even continue with this, design needs more thought)*/}
             {
                 selectedLocation && (
                     <div className="fixed bottom-0 left-0 right-0 block md:hidden z-50 bg-white shadow-xl rounded-t-lg border-t border-gray-200 h-64 px-4 pt-4 pb-20">
-
-                        {/* Close button (always top right) */}
+                        {/* Close button (always at the top right) */}
                         <div className="flex justify-end">
                             <button
                                 onClick={() => handleSelectLocation(null)}
@@ -662,10 +586,8 @@ const Map = () => {
                                 <i className="ri-close-line" />
                             </button>
                         </div>
-
-                        {/* Swipable Attraction Info */}
+                        {/* Swipable Attraction Info Carousel Thing*/}
                         <div {...swipeHandlers} className="flex flex-col items-center justify-center text-center h-full mt-[-1rem]">
-
                             {/* Arrows + Title */}
                             <div className="flex items-center justify-between w-full px-2 mt-2 mb-3">
                                 {/* Left arrow */}
@@ -675,7 +597,6 @@ const Map = () => {
                                 >
                                     <i className="ri-arrow-left-s-line" />
                                 </button>
-
                                 {/* Title */}
                                 <div className="flex-1 px-2">
                                     <h2 className="text-lg font-semibold">{selectedLocation.name}</h2>
@@ -698,7 +619,6 @@ const Map = () => {
                                         </p>
                                     )}
                                 </div>
-
                                 {/* Right arrow */}
                                 <button
                                     onClick={handleNext}
@@ -707,45 +627,111 @@ const Map = () => {
                                     <i className="ri-arrow-right-s-line" />
                                 </button>
                             </div>
-                        </div>
 
-                        {/* Bottom Button Row */}
+                            {/* Bottom Button Row */}
+                        </div>
                         <div className="absolute bottom-4 left-4 right-4 flex gap-4">
                             <button
-                                className="w-1/2 bg-gray-200 hover:bg-red-500 text-gray-700 hover:text-white py-2 rounded text-sm"
-                                onClick={() => console.log("Favorited:", selectedLocation.name)}
-                            >
-                                <i className="ri-heart-line mr-1" /> Favorite
-                            </button>
-
-                            <button
-                                className="w-1/2 bg-gray-200 hover:bg-blue-500 text-gray-700 hover:text-white py-2 rounded text-sm"
+                                className="w-full bg-gray-200 hover:bg-blue-500 text-gray-700 hover:text-white py-2 rounded text-sm"
                                 onClick={() => setIsCollectionPopupOpen(true)}
                             >
                                 <i className="ri-add-line mr-1" /> Add to Collection
                             </button>
+                            <button
+                                onClick={() => {
+                                    setIsTripPopupOpen(!isTripPopupOpen);
+                                    setIsCollectionPopupOpen(false);
+                                }}
+                                className="w-full mt-2 flex items-center justify-center gap-2 bg-primary/10 hover:bg-primary/20 text-primary font‑medium py-2 rounded"
+                            >
+                                <i className="ri-compass-3-line" />
+                                Add to Trip
+                            </button>
+                            {isTripPopupOpen && (
+                                <div className="absolute bottom-16 right-4 w-56 max-h-60 overflow-y-auto bg-white border border-gray-200 rounded shadow-lg z-[999]">
+                                    {trips.length === 0 && (
+                                        <p className="px-4 py-2 text-sm text-gray-500">No trips yet…</p>
+                                    )}
+                                    {trips.map((trip) => (
+                                        <button
+                                            key={trip.id}
+                                            onClick={() => {
+                                                if (selectedLocation) {
+                                                    addToTrip(trip.id, selectedLocation);
+                                                    setIsTripPopupOpen(false);
+                                                }
+                                            }}
+                                            className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm"
+                                        >
+                                            {trip.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {isCollectionPopupOpen && selectedLocation && (
+                                <div className="fixed inset-0 z-50 bg-black/40 flex items-end">
+                                    <div className="w-full bg-white rounded-t-lg p-4 max-h-[65vh] overflow-y-auto">
+                                        <h3 className="text-lg font-semibold mb-3">Save to collection</h3>
+                                        {collections.map((c) => (
+                                            <button
+                                                key={c.id}
+                                                onClick={async () => {
+                                                    await addToCollection(c.id, selectedLocation);
+                                                    setIsCollectionPopupOpen(false);
+                                                }}
+                                                className="w-full text-left py-2 px-3 rounded hover:bg-gray-100"
+                                            >
+                                                {c.name}
+                                            </button>
+                                        ))}
+                                        <form
+                                            onSubmit={async (e) => {
+                                                e.preventDefault();
+                                                const name = (e.currentTarget.elements.namedItem('name') as HTMLInputElement).value.trim();
+                                                if (!name) return;
+                                                await createCollection(name, selectedLocation);
+                                                setIsCollectionPopupOpen(false);
+                                            }}
+                                            className="mt-4 flex gap-2"
+                                        >
+                                            <input
+                                                name="name"
+                                                placeholder="New collection…"
+                                                className="flex‑1 border rounded px-2 py-1 text-sm"
+                                            />
+                                            <button className="bg-primary text-white px-3 rounded">Create</button>
+                                        </form>
+                                        <button
+                                            onClick={() => setIsCollectionPopupOpen(false)}
+                                            className="absolute top-2 right-4 text-2xl text-gray-400"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )
             }
-
             {/* Attraction Sidebar (Popup) */}
+
             {
+
                 selectedLocation && (
                     <div className="hidden md:block absolute top-4 right-8 h-auto w-1/3 bg-white shadow-md p-2 overflow-y-auto rounded z-40">
-                        {/* Header (Title + Buttons) */}
                         <div className="flex items-center justify-between space-x-2">
-                            {/* Title Container */}
                             <div className="flex-1 min-w-0">
                                 <h2
                                     className="text-xl font-bold truncate"
-                                    title={selectedLocation.name} // Tooltip to show full title on hover
+                                    title={selectedLocation.name} //   show full title on hover
                                 >
                                     {selectedLocation.name}
                                 </h2>
                             </div>
 
-                            {/* Buttons Container */}
+                            {/* Buttons container */}
+
                             <div className="flex space-x-4 shrink-0">
                                 <button
                                     onClick={() => handleSelectLocation(null)}
@@ -756,14 +742,12 @@ const Map = () => {
                             </div>
                         </div>
 
-                        {/* Details */}
+                        {/* attraction details */}
                         <p className="text-sm text-gray-600 pt-2"><strong>Address:</strong> {selectedLocation.address}</p>
                         <p className="text-sm text-gray-600"><strong>County:</strong> {selectedLocation.county}</p>
-
                         {selectedLocation.telephone && (
                             <p className="text-sm text-gray-600"><strong>Phone:</strong> {selectedLocation.telephone}</p>
                         )}
-
                         {selectedLocation.url && (
                             <p className="text-sm text-gray-600">
                                 <strong>Website:</strong>
@@ -772,27 +756,17 @@ const Map = () => {
                                 </a>
                             </p>
                         )}
-
                         {selectedLocation.tags && (
                             <p className="text-sm text-gray-600"><strong>Tags:</strong> {selectedLocation.tags}</p>
                         )}
-
-                        {/* buttons at the bottom */}
+                        {/* buttons bottom */}
                         <div className="mt-4 flex justify-between">
-                            {/* <button
-                                onClick={() => console.log("Favorited:", selectedLocation.name)}
-                                className="flex-1 bg-gray-200 hover:bg-red-500 text-gray-700 hover:text-white py-2 rounded-lg mr-2"
-                            >
-                                <i className="ri-car-line text-xl"></i> Add to Trip
-                            </button> */}
-
                             <button
                                 onClick={() => setIsCollectionPopupOpen(true)}
                                 className="flex-1 bg-gray-200 hover:bg-blue-500 text-gray-700 hover:text-white py-2 rounded-lg"
                             >
                                 <i className="ri-add-line text-xl"></i> Add to Collection
                             </button>
-
                         </div>
                         {/* collection popup (only shows when isCollectionPopupOpen is true) */}
                         {isCollectionPopupOpen && selectedLocation && (
@@ -803,7 +777,6 @@ const Map = () => {
                                         <i className="ri-close-line text-xl"></i>
                                     </button>
                                 </div>
-
                                 {/* input for new collection */}
                                 <input
                                     type="text"
@@ -812,23 +785,25 @@ const Map = () => {
                                     placeholder="New collection name"
                                     className="w-full p-2 border rounded mt-2"
                                 />
-
                                 <button
                                     onClick={async () => {
-                                        if (newCollectionName.trim()) {
-                                            await createCollection(newCollectionName.trim());
-                                            setNewCollectionName('');
-                                            setIsCollectionPopupOpen(false);
-                                        } else {
+                                        const name = newCollectionName.trim();
+                                        if (!name) {
                                             alert('Please enter a collection name.');
+                                            return;
                                         }
+                                        if (!selectedLocation) {
+                                            alert('No attraction selected to add to the collection.');
+                                            return;
+                                        }
+                                        await createCollection(name, selectedLocation);
+                                        setNewCollectionName('');
+                                        setIsCollectionPopupOpen(false);
                                     }}
-
                                     className="w-full mt-2 bg-primary text-white text-lg py-1 rounded hover:bg-green-600"
                                 >
                                     Create a Collection
                                 </button>
-
                                 {/* list of existing collections */}
                                 {collections.length > 0 ? (
                                     <div className="mt-2">

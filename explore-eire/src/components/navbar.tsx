@@ -1,5 +1,9 @@
 "use client";
 
+// global variable used for scroll wheels when it comes to an overflow of trips or collections
+const SCROLL_CLASS = "overflow-y-auto scrollbar-thin lg:max-h-[240px] md:max-h-[160px]";
+
+// imports
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -13,7 +17,9 @@ import { useTripsContext } from "@/context/TripsContext";
 import { useSelectedAttraction } from '@/context/SelectedAttractionContext';
 import { TripAttractionList } from "./trips/TripAttractionList";
 import type { Location } from "@/types/location";
+import { useConfirm } from "./confirmProvider";
 
+// marker colours for different day trips
 export const markerColors: Record<number, string> = {
     0: "map-marker-red.svg",
     1: "map-marker-orange.svg",
@@ -24,7 +30,7 @@ export const markerColors: Record<number, string> = {
     6: "map-marker-violet.svg",
 };
 
-// Sidebar Component with Collections
+// main component
 export default function Navbar() {
     const { user } = useAuth();
     const [expandedCollection, setExpandedCollection] = useState<string | null>(null);
@@ -32,8 +38,6 @@ export default function Navbar() {
     const { setLocations } = useMap();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [createDropdownOpen, setCreateDropdownOpen] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);
-    const [settingsExpanded, setSettingsExpanded] = useState(false);
     const [expandedTrip, setExpandedTrip] = useState<string | null>(null);
     const [newCollectionName, setNewCollectionName] = useState('');
     const [newTripName, setNewTripName] = useState('');
@@ -42,7 +46,10 @@ export default function Navbar() {
     const { setSelectedAttraction } = useSelectedAttraction();
     const [groupedItems, setGroupedItems] = useState<Record<number, any[]>>({});
     const [allDays, setAllDays] = useState<number[]>([]);
+    const confirm = useConfirm();
+    const [settingsExpanded, setSettingsExpanded] = useState(false);
 
+    // what happens when the user clicks on a collection
     const handleCollectionClick = (collectionId: string) => {
         if (expandedCollection === collectionId) {
             setExpandedCollection(null);
@@ -53,29 +60,35 @@ export default function Navbar() {
         setExpandedTrip(null);
         setExpandedCollection(collectionId);
 
-        const selectedCollection = collections.find((c) => c.id === collectionId);
+        const selectedCollection = collections.find(c => c.id === collectionId);
         if (!selectedCollection) return;
 
         const attractions: Location[] = selectedCollection.user_collections
-            .map((uc) => uc.attractions)
-            .filter(Boolean)
-            .map((a) => ({
-                id: a.id,
-                name: a.name,
-                address: a.address,
-                county: a.county ?? '',
-                telephone: a.telephone ?? '',
-                url: a.url ?? '',
-                tags: a.tags ?? '',
-                latitude: a.latitude,
-                longitude: a.longitude,
-            }));
+            .filter(uc => uc.attractions)
+            .map(uc => {
+                const a = uc.attractions;
+
+                return {
+                    // bane of my existence, fixed with types/location.ts
+                    id: a.id,
+                    name: a.Name ?? a.name,
+                    address: a.Address ?? a.address,
+                    county: a.County ?? a.county ?? '',
+                    telephone: a.Telephone ?? a.telephone ?? '',
+                    url: a.Url ?? a.url ?? '',
+                    tags: a.Tags ?? a.tags ?? '',
+                    latitude: a.Latitude ?? a.latitude,
+                    longitude: a.Longitude ?? a.longitude,
+                    markerIcon: 'map-marker-red.svg',
+                };
+            });
 
         setLocations(attractions);
+        // for mobile
         setMobileMenuOpen(false);
     };
 
-
+    // account management - sign out
     const handleSignOut = async () => {
         const { error } = await supabase.auth.signOut();
         if (error) {
@@ -87,31 +100,36 @@ export default function Navbar() {
         }
     };
 
+    // process for removing an attraction
     const handleRemoveAttraction = async (collectionId: string, locationId: string) => {
         if (!collectionId || !locationId) return;
+        // very cool confirmation
+        const ok = await confirm("Remove this attraction?");
+        if (!ok) return;
 
-        const isConfirmed = window.confirm("Are you sure you want to remove this attraction?");
-        if (!isConfirmed) return;
-
-        console.log("Removing attraction with id:", locationId, "from collection:", collectionId);
-
+        // find the attraction user is trying to cancel
         const { error } = await supabase
             .from("user_collections")
             .delete()
             .match({ collection_id: collectionId, location_id: locationId });
 
+        // error for development
         if (error) {
             console.error("Error removing attraction:", error.message);
             alert("Failed to remove attraction.");
         } else {
+            // life continoues
             await refetchCollections();
         }
     };
 
+    // attraction removal from trip view
     const handleRemoveAttractionFromTrip = async (tripId: string, locationId: string) => {
-        const confirmed = window.confirm("Remove this attraction from the trip?");
-        if (!confirmed) return;
+        // very cool confirmation
+        const ok = await confirm("Remove this attraction?");
+        if (!ok) return;
 
+        // martching
         const { error } = await supabase
             .from("user_trips")
             .delete()
@@ -124,6 +142,7 @@ export default function Navbar() {
         }
     };
 
+    // have another look at
     useEffect(() => {
         if (!expandedTrip) return;
 
@@ -149,6 +168,7 @@ export default function Navbar() {
         setAllDays([...days].sort((a, b) => a - b));
     }, [expandedTrip, trips]);
 
+    // self explanatory
     const handleMoveDay = async (item: any, newDay: number) => {
         if (!expandedTrip) return;
 
@@ -162,6 +182,7 @@ export default function Navbar() {
             return;
         }
 
+        // update
         await refetchTrips();
 
         const { data: updatedUserTrips, error: fetchError } = await supabase
@@ -174,6 +195,7 @@ export default function Navbar() {
             return;
         }
 
+        // for information in realtion to trips, including having the map marker for it when viewed
         const attractions: Location[] = updatedUserTrips.map((ut) => ({
             id: ut.attractions.id,
             name: ut.attractions.Name,
@@ -190,6 +212,7 @@ export default function Navbar() {
         setLocations(attractions);
     };
 
+    // button for adding another day, limit is 7, because the rainbow deso not have any more primary colours
     const handleAddNewDay = () => {
         if (allDays.length >= 7) {
             alert("Trip day limit reached. You can only have up to 7 days.");
@@ -201,7 +224,17 @@ export default function Navbar() {
         setGroupedItems((prev) => ({ ...prev, [nextDay]: [] }));
     };
 
+    const handleDeleteTrip = async (tripId: string) => {
+        const ok = await confirm("Delete this trip?");
+        if (!ok) return;
 
+        await deleteTrip(tripId);
+
+        setExpandedTrip(null);
+        setLocations([]);
+    };
+
+    // UI TIME
     {
         return (
             <>

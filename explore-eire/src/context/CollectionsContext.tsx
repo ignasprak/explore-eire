@@ -9,13 +9,13 @@ export interface Collection {
     id: string;
     name: string;
     user_id: string;
-    user_collections?: any[]; // You can type this better later
+    user_collections?: any[];
 }
 
 interface CollectionsContextType {
     collections: Collection[];
     refetchCollections: () => Promise<void>;
-    createCollection: (name: string) => Promise<void>;
+    createCollection: (name: string, location?: Location) => Promise<void>;
     deleteCollection: (id: string) => Promise<void>;
     addToCollection: (collectionId: string, location: Location) => Promise<void>;
 }
@@ -30,7 +30,6 @@ export const useCollectionsContext = () => {
     return context;
 };
 
-
 export function CollectionsProvider({ children }: { children: ReactNode }) {
     const { user } = useAuth();
     const [collections, setCollections] = useState<Collection[]>([]);
@@ -38,14 +37,12 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         refetchCollections();
 
-        //update timer
         const interval = setInterval(() => {
             refetchCollections();
-        }, 3000); // every 3 seconds
+        }, 3000);
 
         return () => clearInterval(interval);
     }, [user?.id]);
-
 
     const refetchCollections = async () => {
         if (!user?.id) return;
@@ -73,42 +70,40 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
         setCollections(data || []);
     };
 
-
-
     const createCollection = async (name: string, location?: Location) => {
         if (!user?.id) return;
 
-        const { data, error } = await supabase
-            .from("collections")
-            .insert([{ name, user_id: user.id }])
-            .select()
-            .single();
+        try {
+            const { data, error } = await supabase
+                .from("collections")
+                .insert([{ name, user_id: user.id }])
+                .select()
+                .single();
 
-        if (error || !data) {
-            console.error("Error creating collection:", error?.message);
-            return;
-        }
-
-        // If a location is provided, add it to the collection
-        if (location) {
-            const { error: addError } = await supabase.from("user_collections").insert([
-                {
-                    collection_id: data.id,
-                    location_id: location.id,
-                    user_id: user.id,
-                },
-            ]);
-
-            if (addError) {
-                console.error("Error adding initial location to collection:", addError.message);
+            if (error || !data) {
+                console.error("Error creating collection:", error?.message);
+                return;
             }
+
+            if (location) {
+                const { error: addError } = await supabase.from("user_collections").insert([
+                    {
+                        collection_id: data.id,
+                        location_id: location.id,
+                        user_id: user.id,
+                    },
+                ]);
+
+                if (addError) {
+                    console.error("Error adding initial location to collection:", addError.message);
+                }
+            }
+
+            await refetchCollections?.();
+        } catch (err) {
+            console.error("Unexpected error during collection creation:", err);
         }
-
-        // Optionally refetch or update state here
-        refetchCollections?.();
     };
-
-
 
     const deleteCollection = async (id: string) => {
         const { error } = await supabase.from("collections").delete().eq("id", id);
@@ -144,7 +139,13 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
 
     return (
         <CollectionsContext.Provider
-            value={{ collections, refetchCollections, createCollection, deleteCollection, addToCollection }}
+            value={{
+                collections,
+                refetchCollections,
+                createCollection,
+                deleteCollection,
+                addToCollection,
+            }}
         >
             {children}
         </CollectionsContext.Provider>

@@ -1,8 +1,5 @@
-// import navbar component
 import Navbar from '../components/navbar';
-// import map component
 import Map from '../components/map';
-// import supabase client
 import { createClient } from '@supabase/supabase-js';
 import 'ol/ol.css';
 

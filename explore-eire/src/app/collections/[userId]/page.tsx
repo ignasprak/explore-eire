@@ -57,16 +57,12 @@ export default async function CollectionsPage({
         })),
     }));
 
-
     return (
         <div>
             <Navbar />
-            <div className="container mx-auto py-8 bg-tertiary m-10 p-10 rounded">
-                <h1 className="text-2xl font-bold mb-4">Your Collections</h1>
-                <CollectionsList collections={formattedCollections || []} />
-            </div>
+            <div className="container mx-auto py-8 bg-tertiary m-10 p-10 rounded"></div>
+            <h1 className="text-2xl font-bold mb-4">Your Collections</h1>
+            <CollectionsList collections={formattedCollections || []} />
         </div>
     );
 }
-
-

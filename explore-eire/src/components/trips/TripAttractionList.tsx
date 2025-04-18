@@ -46,13 +46,17 @@ export function TripAttractionList({
             {items.map((item) => (
                 <div
                     key={item.location_id}
-                    className={`p-3 rounded border shadow-sm ${dayColours[currentDay] ?? "bg-white border-gray-300"}`}
+                    className={`p-3 rounded border shadow-sm ${dayColours[currentDay] ?? "bg-white border-gray-300"
+                        }`}
                 >
-                    <div className="flex justify-between items-start">
+                    <div
+                        className="flex justify-between items-start cursor-pointer"
+                        onClick={() => onSelect(item)}
+                    >
                         <div>
                             <h4 className="font-semibold">{item.attractions.Name}</h4>
-
                             <p className="text-sm">{item.attractions.Address}</p>
+
                             {item.attractions.Url && (
                                 <a
                                     href={item.attractions.Url}
@@ -64,15 +68,18 @@ export function TripAttractionList({
                                 </a>
                             )}
                         </div>
+
                         <button
-                            onClick={() => onRemove(item)}
-                            className="text-sm text-red-400 hover:text-red-600"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onRemove(item);
+                            }}
+                            className="text-gray-500 hover:text-red-500 transition"
                         >
                             <i className="ri-close-line text-xl" />
                         </button>
                     </div>
 
-                    {/* Move to Day Buttons */}
                     <div className="mt-2 flex flex-wrap gap-2">
                         {allDays
                             .filter((day) => day !== currentDay)
@@ -90,5 +97,4 @@ export function TripAttractionList({
             ))}
         </div>
     );
-
 }

@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { Location } from '@/types/location';
-import { fromLonLat } from 'ol/proj';
 
 const MapContext = createContext<MapContextType | undefined>(undefined);
 
@@ -16,7 +15,6 @@ export const MapProvider = ({ children }: { children: ReactNode }) => {
     const [locations, setLocations] = useState<Location[]>([]);
 
     const focusOnLocation = (lat: number, lng: number) => {
-        // Optional: add your OpenLayers map logic here if you have a shared map instance
         console.warn("focusOnLocation called, but map instance not shared here.");
     };
 

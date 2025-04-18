@@ -5,7 +5,6 @@ import { supabase } from "../lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
 export default function SignIn() {
-    // state variables for email, password, error, success, and email confirmation status
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState<string | null>(null);
@@ -13,14 +12,12 @@ export default function SignIn() {
     const [isEmailConfirmed, setIsEmailConfirmed] = useState(false);
     const router = useRouter();
 
-    // function to handle sign-in
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
         setSuccess(null);
 
         try {
-            // sign in with email and password using supabase
             const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
             if (error) {
@@ -28,7 +25,6 @@ export default function SignIn() {
                 throw new Error(error.message);
             }
 
-            // check if email is confirmed
             if (!data.user?.email_confirmed_at) {
                 setIsEmailConfirmed(false);
                 throw new Error("if you have just registered, please remember to confirm your email");
@@ -47,7 +43,6 @@ export default function SignIn() {
     };
 
     return (
-        // main container for the sign-in page
         <div className="min-h-screen flex items-center justify-center bg-primary">
             <div className="bg-white p-8 rounded shadow-md w-96">
                 <h2 className="text-2xl font-bold mb-6">Sign In</h2>

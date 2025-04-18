@@ -19,8 +19,9 @@ export function useCollections() {
             .select('*')
             .eq('collection_id', collectionId);
 
-        if (error) console.error('Error fetching collection:', error.message);
-        else {
+        if (error) {
+            console.error('Error fetching collection:', error.message);
+        } else {
             setCollections((prev) =>
                 prev.map((collection) =>
                     collection.id === collectionId ? { ...collection, items: data } : collection
@@ -46,8 +47,11 @@ export function useCollections() {
             .select('id, name')
             .eq('user_id', user.id);
 
-        if (error) console.error('Error fetching collections:', error.message);
-        else setCollections(data || []);
+        if (error) {
+            console.error('Error fetching collections:', error.message);
+        } else {
+            setCollections(data || []);
+        }
     };
 
     const addToCollection = async (collectionId: string, location: Location) => {
@@ -66,7 +70,6 @@ export function useCollections() {
             },
         };
 
-        // Optimistically update UI before saving to Supabase
         setCollections((prev) =>
             prev.map((collection) =>
                 collection.id === collectionId
@@ -75,12 +78,10 @@ export function useCollections() {
             )
         );
 
-        // Save to Supabase
         const { error } = await supabase.from('user_collections').insert([newEntry]);
 
         if (error) {
             console.error('Error adding to collection:', error.message);
-            // Revert UI update if the insert fails
             setCollections((prev) =>
                 prev.map((collection) =>
                     collection.id === collectionId
@@ -99,10 +100,8 @@ export function useCollections() {
         const tempId = Date.now().toString();
         const newCollection = { id: tempId, name: collectionName, user_id: user.id, items: [] };
 
-        // Optimistically update UI
         setCollections((prev) => [...prev, newCollection]);
 
-        // Save to Supabase
         const { data, error } = await supabase
             .from('collections')
             .insert([{ name: collectionName, user_id: user.id }])
@@ -110,11 +109,9 @@ export function useCollections() {
 
         if (error) {
             console.error('Error creating collection:', error.message);
-            // Revert UI update if database operation fails
             setCollections((prev) => prev.filter((c) => c.id !== tempId));
         } else {
             console.log('Collection created successfully:', data);
-            // Replace temporary collection with actual collection from Supabase
             setCollections((prev) =>
                 prev.map((c) => (c.id === tempId ? { ...data[0], items: [] } : c))
             );
@@ -122,5 +119,4 @@ export function useCollections() {
     };
 
     return { collections, addToCollection, fetchUserCollections, createCollection, deleteCollection };
-
 }

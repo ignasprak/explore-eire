@@ -7,6 +7,7 @@ import { MapProvider } from '@/context/MapContext';
 import { CollectionsProvider } from "@/context/CollectionsContext";
 import { TripsProvider } from "@/context/TripsContext";
 import { SelectedAttractionProvider } from "@/context/SelectedAttractionContext";
+import { ConfirmProvider } from "@/components/confirmProvider";
 import 'ol/ol.css';
 
 const geistSans = localFont({
@@ -30,7 +31,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Include Remix Icon CDN */}
         <link
           href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css"
           rel="stylesheet"
@@ -38,25 +38,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
 
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AuthProvider>
-          <SelectedAttractionProvider>
-            <MapProvider>
-              <CollectionsProvider>
-                <TripsProvider>
-                  <div className="relative flex">
-                    {/* Sidebar + Overlay Wrapper */}
-                    <div className="group relative z-50">
-                      <Sidebar />
+        <ConfirmProvider>
+          <AuthProvider>
+            <SelectedAttractionProvider>
+              <MapProvider>
+                <CollectionsProvider>
+                  <TripsProvider>
+
+                    <div className="relative flex">
+                      <div className="group relative z-50">
+                        <Sidebar />
+                      </div>
+
+                      <main className="flex-1 z-10">{children}</main>
                     </div>
 
-                    {/* Main Content */}
-                    <main className="flex-1 z-10">{children}</main>
-                  </div>
-                </TripsProvider>
-              </CollectionsProvider>
-            </MapProvider>
-          </SelectedAttractionProvider>
-        </AuthProvider>
+                  </TripsProvider>
+                </CollectionsProvider>
+              </MapProvider>
+            </SelectedAttractionProvider>
+          </AuthProvider>
+        </ConfirmProvider>
       </body>
     </html>
   );

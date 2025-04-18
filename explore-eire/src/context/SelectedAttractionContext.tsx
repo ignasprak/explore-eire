@@ -1,4 +1,5 @@
 'use client';
+
 import { createContext, useContext, useState, ReactNode } from 'react';
 
 type Attraction = {
@@ -35,6 +36,7 @@ export const SelectedAttractionProvider = ({ children }: { children: ReactNode }
 
 export const useSelectedAttraction = () => {
     const context = useContext(SelectedAttractionContext);
-    if (!context) throw new Error('useSelectedAttraction must be used within SelectedAttractionProvider');
+    if (!context)
+        throw new Error('useSelectedAttraction must be used within SelectedAttractionProvider');
     return context;
 };
