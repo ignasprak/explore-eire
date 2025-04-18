@@ -4,6 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* my colour palette */
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -49,14 +50,14 @@ body {
   background-color: var(--primary-color);
 }
 
-/* Map container styles */
 .map-container {
   border-radius: 15px;
-  /* Add rounded corners */
+  /* Add roundededness */
   overflow: hidden;
-  /* Ensure content doesn't overflow the rounded corners */
+  /* Ensure that the content doesn't overflow */
 }
 
+/* zoom control */
 .ol-zoom {
   bottom: 2rem;
   right: 1rem;

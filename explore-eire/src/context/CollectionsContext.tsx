@@ -137,6 +137,7 @@ export function CollectionsProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    // little interface
     return (
         <CollectionsContext.Provider
             value={{

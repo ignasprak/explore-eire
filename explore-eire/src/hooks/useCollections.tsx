@@ -13,6 +13,7 @@ export function useCollections() {
         if (user) fetchUserCollections();
     }, [user]);
 
+    // redo or not to redo, might be handy later on
     const fetchCollection = async (collectionId: string) => {
         const { data, error } = await supabase
             .from('user_collections')
@@ -36,6 +37,7 @@ export function useCollections() {
         if (error) {
             console.error("Error deleting collection:", error.message);
         } else {
+            // gettind rid of tha ting
             setCollections((prev) => prev.filter((collection) => collection.id !== collectionId));
         }
     };
@@ -47,6 +49,7 @@ export function useCollections() {
             .select('id, name')
             .eq('user_id', user.id);
 
+        // great fun to work this issue out at the start
         if (error) {
             console.error('Error fetching collections:', error.message);
         } else {
@@ -57,6 +60,7 @@ export function useCollections() {
     const addToCollection = async (collectionId: string, location: Location) => {
         if (!user?.id) return;
 
+        // fill in all da stuff, supabase
         const newEntry = {
             collection_id: collectionId,
             location_id: location.id,
@@ -97,11 +101,13 @@ export function useCollections() {
     const createCollection = async (collectionName: string) => {
         if (!user?.id) return;
 
+        // please stay on the screen
         const tempId = Date.now().toString();
         const newCollection = { id: tempId, name: collectionName, user_id: user.id, items: [] };
 
         setCollections((prev) => [...prev, newCollection]);
 
+        // stick it in
         const { data, error } = await supabase
             .from('collections')
             .insert([{ name: collectionName, user_id: user.id }])
@@ -119,5 +125,6 @@ export function useCollections() {
         }
     };
 
+    // collection related functions for use anywhere in the application
     return { collections, addToCollection, fetchUserCollections, createCollection, deleteCollection };
 }

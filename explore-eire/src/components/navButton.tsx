@@ -17,6 +17,7 @@ export function NavButton({
         <button
             type="button"
             onClick={onClick}
+            // why have I not found this blur feature styling earlier
             className="
         w-full flex flex-col items-center justify-center
         gap-1 p-2 rounded-md
