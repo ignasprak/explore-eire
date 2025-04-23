@@ -250,151 +250,157 @@ export default function Navbar() {
                         </Link>
                     </div>
 
-                    {/* Sidebar Links */}
-                    <div className="flex flex-col mt-10 w-full space-y-3">
-                        {/* Create Button */}
-                        <div className="relative w-full">
-                            <button
-                                onClick={() => {
-                                    if (createDropdownOpen) {
-                                        setCreateDropdownOpen(false);
-                                    } else {
-                                        setCreateDropdownOpen(true);
-                                    }
-                                }}
-                                className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
-                            >
-                                <i className="ri-add-circle-line text-xl mb-1"></i>
-                                <span className="text-xs">Create</span>
-                            </button>
+                    {user && (
+                        <>
+                            {/* Sidebar Links */}
+                            <div className="flex flex-col mt-10 w-full space-y-3">
 
-                            {/* Dropdown Menu */}
-                            {createDropdownOpen && (
-                                <div className="absolute left-full top-0 ml-2 w-60 bg-white border border-gray-200 shadow-lg rounded z-50 p-3 space-y-4">
-                                    {/* New Collection */}
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-700 mb-1">New Collection</p>
-                                        <input
-                                            type="text"
-                                            value={newCollectionName}
-                                            onChange={(e) => setNewCollectionName(e.target.value)}
-                                            placeholder="Collection name"
-                                            className="w-full p-2 border rounded text-sm"
-                                        />
-                                        <button
-                                            onClick={async () => {
-                                                if (newCollectionName.trim()) {
-                                                    await createCollection(newCollectionName.trim());
-                                                    setNewCollectionName('');
-                                                    setCreateDropdownOpen(false);
-                                                } else {
-                                                    alert('Please enter a collection name.');
-                                                }
-                                            }}
-                                            className="mt-2 w-full bg-primary text-white text-sm py-1 rounded hover:bg-green-600"
-                                        >
-                                            Create Collection
-                                        </button>
-                                    </div>
-
-                                    {/* New Trip */}
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-700 mb-1">New Trip</p>
-                                        <input
-                                            type="text"
-                                            value={newTripName}
-                                            onChange={(e) => setNewTripName(e.target.value)}
-                                            placeholder="Trip name"
-                                            className="w-full p-2 border rounded text-sm"
-                                        />
-                                        <button
-                                            onClick={async () => {
-                                                if (newTripName.trim()) {
-                                                    await createTrip(newTripName.trim());
-                                                    setNewTripName("");
-                                                    setCreateDropdownOpen(false);
-                                                } else {
-                                                    alert("Please enter a trip name.");
-                                                }
-                                            }}
-                                            className="mt-2 w-full bg-primary text-white text-sm py-1 rounded hover:bg-green-600"
-                                        >
-                                            Create New Trip
-                                        </button>
-
-
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Collections Section */}
-                        {user && (
-                            <div className="w-full">
-                                <div className="text-gray-600 items-center text-xs mb-2">Collections</div>
-                                {collections.map((collection) => (
+                                {/* Create Button */}
+                                <div className="relative w-full">
                                     <button
-                                        key={collection.id}
-                                        onClick={() => handleCollectionClick(collection.id)}
+                                        onClick={() => {
+                                            if (createDropdownOpen) {
+                                                setCreateDropdownOpen(false);
+                                            } else {
+                                                setCreateDropdownOpen(true);
+                                            }
+                                        }}
                                         className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
                                     >
-                                        <div className="flex flex-col items-center text-center">
-                                            <i className="ri-folder-line text-xl mb-1"></i>
-                                            <span className="text-xs">{collection.name}</span>
+                                        <i className="ri-add-circle-line text-xl mb-1"></i>
+                                        <span className="text-xs">Create</span>
+                                    </button>
+
+                                    {/* Dropdown Menu */}
+                                    {createDropdownOpen && (
+                                        <div className="absolute left-full top-0 ml-2 w-60 bg-white border border-gray-200 shadow-lg rounded z-50 p-3 space-y-4">
+                                            {/* New Collection */}
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-700 mb-1">New Collection</p>
+                                                <input
+                                                    type="text"
+                                                    value={newCollectionName}
+                                                    onChange={(e) => setNewCollectionName(e.target.value)}
+                                                    placeholder="Collection name"
+                                                    className="w-full p-2 border rounded text-sm"
+                                                />
+                                                <button
+                                                    onClick={async () => {
+                                                        if (newCollectionName.trim()) {
+                                                            await createCollection(newCollectionName.trim());
+                                                            setNewCollectionName('');
+                                                            setCreateDropdownOpen(false);
+                                                        } else {
+                                                            alert('Please enter a collection name.');
+                                                        }
+                                                    }}
+                                                    className="mt-2 w-full bg-primary text-white text-sm py-1 rounded hover:bg-green-600"
+                                                >
+                                                    Create Collection
+                                                </button>
+                                            </div>
+
+                                            {/* New Trip */}
+                                            <div>
+                                                <p className="text-sm font-semibold text-gray-700 mb-1">New Trip</p>
+                                                <input
+                                                    type="text"
+                                                    value={newTripName}
+                                                    onChange={(e) => setNewTripName(e.target.value)}
+                                                    placeholder="Trip name"
+                                                    className="w-full p-2 border rounded text-sm"
+                                                />
+                                                <button
+                                                    onClick={async () => {
+                                                        if (newTripName.trim()) {
+                                                            await createTrip(newTripName.trim());
+                                                            setNewTripName("");
+                                                            setCreateDropdownOpen(false);
+                                                        } else {
+                                                            alert("Please enter a trip name.");
+                                                        }
+                                                    }}
+                                                    className="mt-2 w-full bg-primary text-white text-sm py-1 rounded hover:bg-green-600"
+                                                >
+                                                    Create New Trip
+                                                </button>
+
+
+                                            </div>
                                         </div>
+                                    )}
+                                </div>
+
+
+                                {/* Collections Section */}
+                                {user && (
+                                    <div className="w-full">
+                                        <div className="text-gray-600 items-center text-xs mb-2">Collections</div>
+                                        {collections.map((collection) => (
+                                            <button
+                                                key={collection.id}
+                                                onClick={() => handleCollectionClick(collection.id)}
+                                                className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
+                                            >
+                                                <div className="flex flex-col items-center text-center">
+                                                    <i className="ri-folder-line text-xl mb-1"></i>
+                                                    <span className="text-xs">{collection.name}</span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Trip Section */}
+                                <div className="text-gray-600 text-xs items-center px-4 mt-6 mb-2">Trips</div>
+                                {trips.map((trip) => (
+                                    <button
+                                        key={trip.id}
+                                        onClick={() => {
+                                            if (expandedTrip === trip.id) {
+                                                setExpandedTrip(null);
+                                                setLocations([]);
+                                                return;
+                                            }
+
+                                            const selectedTrip = trips.find((t) => t.id === trip.id);
+                                            if (!selectedTrip) return;
+
+                                            setExpandedCollection(null);
+                                            setExpandedTrip(trip.id);
+
+                                            const attractions: Location[] = selectedTrip.user_trips
+                                                .filter((ut) => ut.attractions)
+                                                .map((ut) => {
+                                                    const a = ut.attractions;
+                                                    const markerIcon = markerColors[ut.day ?? 0] || "/images/markers/map-marker-red.svg";
+
+                                                    return {
+                                                        id: a.id,
+                                                        name: a.Name,
+                                                        address: a.Address,
+                                                        county: a.County ?? '',
+                                                        telephone: a.Telephone ?? '',
+                                                        url: a.Url ?? '',
+                                                        tags: a.Tags ?? '',
+                                                        latitude: a.Latitude,
+                                                        longitude: a.Longitude,
+                                                        markerIcon,
+                                                    };
+                                                });
+
+                                            setLocations(attractions);
+                                        }}
+
+                                        className="w-full flex flex-col items-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
+                                    >
+                                        <i className="ri-compass-3-line text-xl mb-1"></i>
+                                        <span className="text-xs text-center w-full">{trip.name}</span>
                                     </button>
                                 ))}
                             </div>
-                        )}
-
-                        {/* Trip Section */}
-                        <div className="text-gray-600 text-xs items-center px-4 mt-6 mb-2">Trips</div>
-                        {trips.map((trip) => (
-                            <button
-                                key={trip.id}
-                                onClick={() => {
-                                    if (expandedTrip === trip.id) {
-                                        setExpandedTrip(null);
-                                        setLocations([]);
-                                        return;
-                                    }
-
-                                    const selectedTrip = trips.find((t) => t.id === trip.id);
-                                    if (!selectedTrip) return;
-
-                                    setExpandedCollection(null);
-                                    setExpandedTrip(trip.id);
-
-                                    const attractions: Location[] = selectedTrip.user_trips
-                                        .filter((ut) => ut.attractions)
-                                        .map((ut) => {
-                                            const a = ut.attractions;
-                                            const markerIcon = markerColors[ut.day ?? 0] || "/images/markers/map-marker-red.svg";
-
-                                            return {
-                                                id: a.id,
-                                                name: a.Name,
-                                                address: a.Address,
-                                                county: a.County ?? '',
-                                                telephone: a.Telephone ?? '',
-                                                url: a.Url ?? '',
-                                                tags: a.Tags ?? '',
-                                                latitude: a.Latitude,
-                                                longitude: a.Longitude,
-                                                markerIcon,
-                                            };
-                                        });
-
-                                    setLocations(attractions);
-                                }}
-
-                                className="w-full flex flex-col items-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
-                            >
-                                <i className="ri-compass-3-line text-xl mb-1"></i>
-                                <span className="text-xs text-center w-full">{trip.name}</span>
-                            </button>
-                        ))}
-                    </div>
+                        </>
+                    )}
 
                     {/* Expanded Collection View */}
                     {expandedCollection && (
@@ -658,94 +664,102 @@ export default function Navbar() {
                             </div>
                         )}
                     </div>
-                </nav>
+                </nav >
 
-                {/* Settings */}
-                {settingsExpanded && (
-                    <div className="absolute top-0 left-20 w-96 h-full bg-white shadow-lg p-4 z-30 overflow-y-auto">
-                        {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold">Settings</h2>
-                            <button
-                                onClick={() => setSettingsExpanded(false)}
-                                className="text-gray-600 hover:text-blue-500 transition"
-                                title="Back to Search"
-                            >
-                                <i className="ri-arrow-go-back-line text-xl" />
-                            </button>
-                        </div>
+                {user && (
+                    <>
+                        {/* Settings */}
+                        {settingsExpanded && (
+                            <div className="absolute top-0 left-20 w-96 h-full bg-white shadow-lg p-4 z-30 overflow-y-auto">
+                                {/* Header */}
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold">Settings</h2>
+                                    <button
+                                        onClick={() => setSettingsExpanded(false)}
+                                        className="text-gray-600 hover:text-blue-500 transition"
+                                        title="Back to Search"
+                                    >
+                                        <i className="ri-arrow-go-back-line text-xl" />
+                                    </button>
+                                </div>
 
-                        {/* Font Size */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Font Size</label>
-                            <select
-                                onChange={(e) =>
-                                    document.documentElement.style.setProperty('--user-font-size', e.target.value)
-                                }
-                                className="w-full border rounded p-2 text-sm"
-                            >
-                                <option value="16px">Normal</option>
-                                <option value="18px">Large</option>
-                                <option value="20px">Extra Large</option>
-                            </select>
-                        </div>
+                                {/* Font Size */}
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Font Size</label>
+                                    <select
+                                        onChange={(e) =>
+                                            document.documentElement.style.setProperty('--user-font-size', e.target.value)
+                                        }
+                                        className="w-full border rounded p-2 text-sm"
+                                    >
+                                        <option value="16px">Normal</option>
+                                        <option value="18px">Large</option>
+                                        <option value="20px">Extra Large</option>
+                                    </select>
+                                </div>
 
-                        {/* Focus Ring */}
-                        <input
-                            type="checkbox"
-                            id="focusOutline"
-                            onChange={(e) => {
-                                if (e.target.checked) {
-                                    document.documentElement.style.setProperty('--outline-style', '2px solid #2563eb');
-                                } else {
-                                    document.documentElement.style.setProperty('--outline-style', 'none');
-                                }
-                            }}
-                            className="mr-2"
-                        />
-                        <label htmlFor="focusOutline" className="text-sm text-gray-700">
-                            Show Keyboard Focus Ring
-                        </label>
+                                {/* Focus Ring */}
+                                <input
+                                    type="checkbox"
+                                    id="focusOutline"
+                                    onChange={(e) => {
+                                        if (e.target.checked) {
+                                            document.documentElement.style.setProperty('--outline-style', '2px solid #2563eb');
+                                        } else {
+                                            document.documentElement.style.setProperty('--outline-style', 'none');
+                                        }
+                                    }}
+                                    className="mr-2"
+                                />
+                                <label htmlFor="focusOutline" className="text-sm text-gray-700">
+                                    Show Keyboard Focus Ring
+                                </label>
 
-                        {/* Dyslexia Font */}
-                        <input
-                            type="checkbox"
-                            id="dyslexiaFont"
-                            onChange={(e) => {
-                                document.body.classList.toggle('dyslexia-font', e.target.checked);
-                            }}
-                            className="mr-2"
-                        />
-                        <label htmlFor="dyslexiaFont" className="text-sm text-gray-700">
-                            Dyslexia-Friendly Font
-                        </label>
+                                {/* Dyslexia Font */}
+                                <input
+                                    type="checkbox"
+                                    id="dyslexiaFont"
+                                    onChange={(e) => {
+                                        document.body.classList.toggle('dyslexia-font', e.target.checked);
+                                    }}
+                                    className="mr-2"
+                                />
+                                <label htmlFor="dyslexiaFont" className="text-sm text-gray-700">
+                                    Dyslexia-Friendly Font
+                                </label>
 
-                        {/* High Contrast Mode */}
-                        <div className="flex items-center">
-                            <input
-                                type="checkbox"
-                                id="highContrast"
-                                onChange={(e) =>
-                                    document.body.classList.toggle('high-contrast', e.target.checked)
-                                }
-                                className="mr-2"
-                            />
-                            <label htmlFor="highContrast" className="text-sm text-gray-700">
-                                Enable High Contrast
-                            </label>
-                        </div>
-                    </div>
-                )}
+                                {/* High Contrast Mode */}
+                                <div className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        id="highContrast"
+                                        onChange={(e) =>
+                                            document.body.classList.toggle('high-contrast', e.target.checked)
+                                        }
+                                        className="mr-2"
+                                    />
+                                    <label htmlFor="highContrast" className="text-sm text-gray-700">
+                                        Enable High Contrast
+                                    </label>
+                                </div>
+                            </div>
+                        )}
+
+                    </>
+                )
+                }
 
                 {/* Mobile Hamburger Button */}
-                {!mobileMenuOpen && (
-                    <button
-                        onClick={() => setMobileMenuOpen(true)}
-                        className="md:hidden fixed top-4 left-4 z-[1000] bg-white rounded-full p-2 shadow-lg"
-                    >
-                        <i className="ri-menu-line text-2xl text-gray-700"></i>
-                    </button>
-                )}
+                {
+                    !mobileMenuOpen && (
+                        <button
+                            onClick={() => setMobileMenuOpen(true)}
+                            className="md:hidden fixed top-4 left-4 z-[1000] bg-white rounded-full p-2 shadow-lg"
+                        >
+                            <i className="ri-menu-line text-2xl text-gray-700"></i>
+                        </button>
+                    )
+                }
 
                 {/* Mobile Slide Menu */}
                 <div
