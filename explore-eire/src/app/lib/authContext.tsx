@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // rolling with an authorised user
     useEffect(() => {
         const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-            console.log(event, session);
+            console.log(event, session); //debug
 
             if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
                 setUser(session?.user ?? null);
@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         });
 
+        // cleanup the subscription on unmount
         return () => {
             authListener.subscription.unsubscribe();
         };

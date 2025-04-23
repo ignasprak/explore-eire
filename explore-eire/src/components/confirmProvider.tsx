@@ -2,6 +2,7 @@
 import { createContext, useState, useContext, ReactNode } from "react";
 import { ConfirmModal } from "./confirmModal";
 
+// shape of the state for our confirm modal
 interface ConfirmState {
     message: string;
     onConfirm?: () => void;
@@ -9,9 +10,10 @@ interface ConfirmState {
     open: boolean;
 }
 
+// exposing a function that shows a modal and returns true/false
 const ConfirmContext = createContext<
     (msg: string) => Promise<boolean>
->(() => Promise.resolve(false));
+>(() => Promise.resolve(false)); //fallback
 
 export const useConfirm = () => useContext(ConfirmContext);
 
@@ -21,6 +23,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
         open: false,
     });
 
+    // function that shows the modal and waits for user input
     const ask = (message: string) =>
         new Promise<boolean>((resolve) => {
             setState({

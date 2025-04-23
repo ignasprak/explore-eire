@@ -14,25 +14,28 @@ export default function Register() {
     const router = useRouter();
 
     const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
+        e.preventDefault(); // stop form from reloading the page
+        setError(null); // clear previous errors
         setSuccess(null);
 
         try {
+            // call Supabase sign up API with user-provided credentials
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
                     data: {
-                        username: username,
+                        username: username, // custom user metadata hopefully for future social collaboration use
                     },
                 },
             });
 
+            // uh oh bro
             if (authError) {
                 throw new Error(authError.message);
             }
 
+            // user was created but email isn't verified yet
             if (authData?.user?.email_confirmed_at === null) {
                 setSuccess("Please confirm your account using the link sent to your email.");
                 return;
@@ -40,7 +43,7 @@ export default function Register() {
 
             setSuccess("Registration successful! Redirecting...");
             setTimeout(() => {
-                router.push("/login");
+                router.push("/login"); // just to make sure
             }, 2000);
         } catch (err: unknown) {
             if (err instanceof Error) {

@@ -1,3 +1,6 @@
+// context to manage the currently selected attraction (used across collection/trip/map views)
+
+
 'use client';
 
 import { createContext, useContext, useState, ReactNode } from 'react';
@@ -34,6 +37,7 @@ export const SelectedAttractionProvider = ({ children }: { children: ReactNode }
     );
 };
 
+// hook to use anywhere, throws if used outside provider
 export const useSelectedAttraction = () => {
     const context = useContext(SelectedAttractionContext);
     if (!context)

@@ -13,8 +13,8 @@ export default function SignIn() {
     const router = useRouter();
 
     const handleSignIn = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError(null);
+        e.preventDefault(); // stop default form reload
+        setError(null); // clear old messages
         setSuccess(null);
 
         try {
@@ -25,6 +25,7 @@ export default function SignIn() {
                 throw new Error(error.message);
             }
 
+            // checking if the user has confirmed their email
             if (!data.user?.email_confirmed_at) {
                 setIsEmailConfirmed(false);
                 throw new Error("if you have just registered, please remember to confirm your email");
@@ -32,7 +33,7 @@ export default function SignIn() {
 
             setIsEmailConfirmed(true);
             setSuccess("sign-in successful! redirecting...");
-            router.push("/");
+            router.push("/"); // yuppa
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message);

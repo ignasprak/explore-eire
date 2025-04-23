@@ -9,6 +9,8 @@ import { useCollectionsContext } from "@/context/CollectionsContext";
 import { useSwipeable } from 'react-swipeable';
 import { useSelectedAttraction } from "@/context/SelectedAttractionContext";
 import { useTripsContext } from "@/context/TripsContext";
+import { Location } from "@/types/location";
+import { RawLocation } from "@/types/location";
 
 // ol imports
 import "ol/ol.css";
@@ -134,14 +136,12 @@ const customStyles = {
 const Map = () => {
     const mapContainerRef = useRef<HTMLDivElement | null>(null);
     const [map, setMap] = useState<OlMap | null>(null);
-    const { user } = useAuth();
-    const [selectedFilters, setSelectedFilters] = useState<{ value: string; label: string }[]>([]);
-    const [selectedCounties, setSelectedCounties] = useState<{ value: string; label: string }[]>([]);
+    const [selectedFilters, setSelectedFilters] = useState<{ tagValue: any; filterValue: any; value: string; label: string }[]>([]);
+    const [selectedCounties, setSelectedCounties] = useState<{ countyValue: any; value: string; label: string }[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [dropdownOpenId, setDropdownOpenId] = useState<string | null>(null); // for tracking which attractions dropdown is openn
     const dropdownRef = useRef<HTMLDivElement | null>(null); //handles clicking outside of collection poup
     const [newCollectionName, setNewCollectionName] = useState('');
-    const [isListOpen, setIsListOpen] = useState<boolean>(false);
     const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const [loading, setLoading] = useState(false);
@@ -154,34 +154,34 @@ const Map = () => {
     const { trips, addToTrip } = useTripsContext();
     const [isTripPopupOpen, setIsTripPopupOpen] = useState(false);
 
-    // making everything nice and normal for future use, no more silly business
-    const cleanLocData = (loc: any) => ({
-        id: loc.id,
-        name: loc.name ?? loc.Name,
-        county: loc.county ?? loc.County,
-        address: loc.address ?? loc.Address,
-        telephone: loc.telephone ?? loc.Telephone,
-        url: loc.url ?? loc.Url,
-        tags: loc.tags ?? loc.Tags,
-        latitude: loc.latitude ?? loc.Latitude,
-        longitude: loc.longitude ?? loc.Longitude,
-        markerIcon: loc.markerIcon ?? "map-marker-red2.svg",
+    // normalise incoming location data for consistency sake
+    const cleanLocData = (rawLocation: RawLocation): Location => ({
+        id: rawLocation.id,
+        name: rawLocation.name ?? rawLocation.Name,
+        county: rawLocation.county ?? rawLocation.County,
+        address: rawLocation.address ?? rawLocation.Address,
+        telephone: rawLocation.telephone ?? rawLocation.Telephone,
+        url: rawLocation.url ?? rawLocation.Url,
+        tags: rawLocation.tags ?? rawLocation.Tags,
+        latitude: rawLocation.latitude ?? rawLocation.Latitude,
+        longitude: rawLocation.longitude ?? rawLocation.Longitude,
+        markerIcon: rawLocation.markerIcon ?? "/images/markers/map-marker-red.svg",
     });
 
-    // carousel for mobile view
+    // sets the selected attraction in state + highlights it in the carousel + sidebar
     const handleSelectLocation = (location: any) => {
         if (!location) {
             setSelectedLocation(null);
             setCurrentIndex(null);
             return;
         }
-        const index = locations.findIndex((loc) => loc.id === location.id);
+        const index = locations.findIndex((rawLocation) => rawLocation.id === location.id);
         setCurrentIndex(index);
         setSelectedLocation(cleanLocData(location));
     };
 
     // extended carousel
-    const handleNext = () => {
+    const handleNextAttraction = () => {
         if (currentIndex === null || locations.length === 0) return;
         const nextIndex = (currentIndex + 1) % locations.length;
         setCurrentIndex(nextIndex);
@@ -189,7 +189,7 @@ const Map = () => {
     };
 
     // extended carousel that goes the opposite way
-    const handlePrevious = () => {
+    const handlePreviousAttraction = () => {
         if (currentIndex === null || locations.length === 0) return;
         const prevIndex = (currentIndex - 1 + locations.length) % locations.length;
         setCurrentIndex(prevIndex);
@@ -197,63 +197,124 @@ const Map = () => {
     };
 
     const swipeHandlers = useSwipeable({
-        onSwipedLeft: handleNext,
-        onSwipedRight: handlePrevious,
+        onSwipedLeft: handleNextAttraction,
+        onSwipedRight: handlePreviousAttraction,
         delta: 50,
         trackTouch: true,
         trackMouse: false,
     });
 
-    const handleScroll = () => {
-        if (!scrollRef.current) return;
-        const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-        if (scrollTop + clientHeight >= scrollHeight - 10 && !loading) {
-            setLoading(true);
-            loadMoreLocations();
-        }
+    // infinite scroll logic, but there is no more grid view
+    // const scrollLoadLocations = () => {
+    //     if (!scrollRef.current) return;
+    //     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    //     if (scrollTop + clientHeight >= scrollHeight - 10 && !loading) {
+    //         setLoading(true);
+    //         fetchMoreAttractions();
+    //     }
+    // };
+
+    // creates a styled feature (marker) for the map 
+    const createAttractionFeature = (location: Location, isSelected: boolean): Feature<Point> => {
+
+        const feature = new Feature({
+            geometry: new Point(fromLonLat([location.longitude, location.latitude])),
+            id: location.id,
+            name: location.name,
+            url: location.url,
+            telephone: location.telephone,
+            address: location.address,
+            tags: location.tags,
+            county: location.county,
+        });
+
+        feature.setStyle(
+            new Style({
+                image: new Icon({
+                    src: location.markerIcon || "/images/markers/map-marker-red.svg",
+                    scale: isSelected ? 0.085 : 0.035,
+                    anchor: [0.5, 1],
+                    anchorXUnits: "fraction",
+                    anchorYUnits: "fraction",
+                }),
+                text: isSelected
+                    ? new Text({
+                        text: location.name,
+                        offsetY: -20,
+                        font: "bold 14px Arial",
+                        fill: new Fill({ color: "#000" }),
+                        stroke: new Stroke({ color: "#fff", width: 3 }),
+                    })
+                    : undefined,
+                zIndex: isSelected ? 1000 : 1,
+            })
+        );
+
+        return feature;
     };
 
-    const loadMoreLocations = async () => {
+    // adding a more visible layer on selected attraction
+    const addHighlightLayer = (mapInstance: OlMap, selectedFeature: Feature<Point>) => {
+        const highlightLayer = new VectorLayer({
+            source: new VectorSource({ features: [selectedFeature] }),
+            zIndex: 1001,
+        });
+        highlightLayer.set("highlight", true);
+        mapInstance.addLayer(highlightLayer);
+    };
+
+    // housekeeping
+    const clearHighlightLayers = (mapInstance: OlMap) => {
+        const existingVectorLayers = mapInstance.getLayers().getArray().filter(layer => layer.get("highlight"));
+        existingVectorLayers.forEach(layer => mapInstance.removeLayer(layer));
+    };
+
+    const fetchMoreAttractions = async () => {
         if (!hasMore) return;
         try {
             const queryParams = new URLSearchParams({
                 search: searchQuery,
-                filters: selectedFilters.map(filter => filter.value).join(","),
-                counties: selectedCounties.map(county => county.value).join(","),
+                filters: selectedFilters.map(filter => filter.tagValue).join(","),
+                counties: selectedCounties.map(county => county.countyValue).join(","),
                 offset: locations.length.toString(),
                 limit: "20",
             });
             const response = await fetch(`/api/locations?${queryParams.toString()}`);
             if (!response.ok) throw new Error("Failed to fetch more locations");
-            const newData = await response.json();
-            if (newData.length === 0) {
+            const fetchedLocations = await response.json();
+            if (fetchedLocations.length === 0) {
                 setHasMore(false);
             } else {
-                const existingIds = new Set(locations.map(loc => loc.id));
-                const filteredData = newData.filter(loc => !existingIds.has(loc.id));
-                const normalisedData = filteredData.map((loc: any) => cleanLocData(loc));
-                setLocations([...locations, ...normalisedData]);
+                const existingIds = new Set(locations.map(rawLocation => rawLocation.id));
+                const uniqueLocations = fetchedLocations.filter(rawLocation => !existingIds.has(rawLocation.id));
+                const cleanedLocations = uniqueLocations.map((rawLocation: any) => cleanLocData(rawLocation));
+                setLocations([...locations, ...cleanedLocations]);
             }
         } catch (err) {
             console.error("Error loading more locations:", err);
         }
     };
+
+    // open or close the attraction dropdown
     const toggleDropdown = (id: string) => {
         setDropdownOpenId((prev) => (prev === id ? null : id));
     };
 
-    // fetch locations when the filters change
+    // core fetch function — gets locations based on filters and search
     const fetchLocations = async () => {
         try {
             const queryParams = new URLSearchParams({
                 search: searchQuery,
-                filters: selectedFilters.map(filter => filter.value).join(","),
-                counties: selectedCounties.map(county => county.value).join(","),
+                filters: selectedFilters.map(filter => filter.filterValue).join(","),
+                counties: selectedCounties.map(county => county.countyValue).join(","),
             });
+
             const response = await fetch(`/api/locations?${queryParams.toString()}`);
             if (!response.ok) throw new Error("Failed to fetch locations");
-            const data = await response.json();
-            const dataWithMarkers = data.map((loc: any) => cleanLocData(loc));
+
+            const apiLocations = await response.json();
+
+            const dataWithMarkers = apiLocations.map((rawLocation: any) => cleanLocData(rawLocation));
             setLocations(dataWithMarkers);
         } catch (err) {
             console.error("Error fetching locations:", err);
@@ -261,26 +322,82 @@ const Map = () => {
         }
     };
 
-    // !!!!maybe consider redoing this or gettinf rid of it, since I am doing show all attractions
+    // backup plan — get everything if "All" is selected
     const getAllMarkers = async () => {
         try {
             const queryParams = new URLSearchParams({
                 search: searchQuery,
-                filters: selectedFilters.map(filter => filter.value).join(","),
-                counties: selectedCounties.map(county => county.value).join(","),
+                filters: selectedFilters.map(filter => filter.filterValue).join(","),
+                counties: selectedCounties.map(county => county.countyValue).join(","),
             });
             const response = await fetch(`/api/locations?${queryParams.toString()}`);
             if (!response.ok) throw new Error("Failed to fetch all locations");
-            const data = await response.json();
-            const normalisedData = data.map((loc: any) => cleanLocData(loc));
-            setLocations(normalisedData);
+            const apiLocations = await response.json();
+            const cleanedLocations = apiLocations.map((rawLocation: any) => cleanLocData(rawLocation));
+            setLocations(cleanedLocations);
         } catch (err) {
             console.error("Error fetching all locations:", err);
             setLocations([]);
         }
     };
 
-    // takes care of clicking inside and outside of attractions popup
+    // takes location data and visualizes it with markers on the map
+    const renderMarkersOnMap = (mapInstance: OlMap, locationList: Location[], selectedId: string | null) => {
+        // Clear existing highlight layers
+        clearHighlightLayers(mapInstance);
+
+        const vectorSource = new VectorSource();
+        let selectedFeature: Feature<Point> | null = null;
+
+        locationList.forEach((location) => {
+            const isSelected = selectedId === location.id;
+            const feature = createAttractionFeature(location, isSelected);
+
+            if (isSelected) {
+                selectedFeature = feature;
+            }
+
+            vectorSource.addFeature(feature);
+        });
+
+        const vectorLayer = new VectorLayer({
+            source: vectorSource,
+            zIndex: 5,
+        });
+        vectorLayer.set("highlight", true);
+        mapInstance.addLayer(vectorLayer);
+
+        if (selectedFeature) {
+            addHighlightLayer(mapInstance, selectedFeature);
+        }
+    };
+
+    // init OpenLayers map when component mounts
+    useEffect(() => {
+        if (!map) return;
+
+        renderMarkersOnMap(map, locations, selectedLocation?.id || null);
+
+        const selectInteraction = new OlSelect();
+        map.addInteraction(selectInteraction);
+
+        selectInteraction.on("select", (event) => {
+            const feature = event.selected[0];
+            if (feature && feature.getGeometry() instanceof Point) {
+                setSelectedFeature(feature as Feature<Point>);
+                handleSelectLocation(feature.getProperties());
+            } else {
+                setSelectedFeature(null);
+                setSelectedLocation(null);
+            }
+        });
+
+        return () => {
+            map.removeInteraction(selectInteraction);
+        };
+    }, [map, locations, selectedLocation]);
+
+    // runs fetch whenever filters/search update
     useEffect(() => {
         if (
             searchQuery ||
@@ -297,6 +414,7 @@ const Map = () => {
         }
     }, [searchQuery, selectedFilters, selectedCounties]);
 
+    // basic outside click detector 
     useEffect(() => {
         const handleClick = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -310,83 +428,13 @@ const Map = () => {
     }, []);
 
     useEffect(() => {
-        if (!map || locations.length === 0) return;
-
-        // marker and map testing
-        console.log("1. Markesr are being rendered now!!!");
-        console.log("2. Map is ready and initialised: ", map);
-        console.log("3. Locations have loaded in: ", locations);
-
-        // take away previous vector layers
-        const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get("highlight"));
-        existingVectorLayers.forEach(layer => map.removeLayer(layer));
-        const vectorSource = new VectorSource();
-        let selectedFeature: Feature<Point> | null = null;
-        locations.forEach((location) => {
-            const isSelected = selectedLocation && selectedLocation.id === location.id;
-            const feature = new Feature({
-                geometry: new Point(fromLonLat([location.longitude, location.latitude])),
-                id: location.id,
-                name: location.name,
-                url: location.url,
-                telephone: location.telephone,
-                address: location.address,
-                tags: location.tags,
-                county: location.county,
-            });
-            // would be nice to eventually add in marker clustering for accessibility purposes
-            feature.setStyle(
-                new Style({
-                    image: new Icon({
-                        src: location.markerIcon
-                            ? `/images/markers/${location.markerIcon}`
-                            : `/images/markers/map-marker-red2.svg`,
-                        scale: isSelected ? 0.085 : 0.035,
-                        anchor: [0.5, 1],
-                        anchorXUnits: "fraction",
-                        anchorYUnits: "fraction",
-                    }),
-                    text: isSelected
-                        ? new Text({
-                            text: location.name,
-                            offsetY: -20,
-                            font: "bold 14px Arial",
-                            fill: new Fill({ color: "#000" }),
-                            stroke: new Stroke({ color: "#fff", width: 3 }),
-                        })
-                        : undefined,
-                    zIndex: isSelected ? 1000 : 1,
-                })
-            );
-            if (isSelected) {
-                selectedFeature = feature;
-            }
-            vectorSource.addFeature(feature);
-        });
-        const vectorLayer = new VectorLayer({
-            source: vectorSource,
-            zIndex: 5,
-        });
-        vectorLayer.set("highlight", true);
-        map.addLayer(vectorLayer);
-        if (selectedFeature) {
-            const highlightLayer = new VectorLayer({
-                source: new VectorSource({ features: [selectedFeature] }),
-                zIndex: 1001,
-            });
-            highlightLayer.set("highlight", true);
-            map.addLayer(highlightLayer);
-        }
-    }, [map, locations]);
-
-    useEffect(() => {
-        const handleScroll = () => {
+        const scrollLoadLocations = () => {
             if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 && hasMore) {
-                loadMoreLocations();
+                fetchMoreAttractions();
             }
         };
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
+        window.addEventListener("scroll", scrollLoadLocations);
+        return () => window.removeEventListener("scroll", scrollLoadLocations);
     }, [hasMore]);
 
     const handleCreateCollection = async () => {
@@ -395,11 +443,6 @@ const Map = () => {
 
         await createCollection(collectionName); // pass name to the hook
     };
-
-    // calls fetchLocations() inside when filters are set
-    useEffect(() => {
-        fetchLocations();
-    }, [searchQuery, selectedFilters, selectedCounties]);
 
     // initialise the openlayers map
     useEffect(() => {
@@ -422,107 +465,6 @@ const Map = () => {
             mapInstance.setTarget(null);
         };
     }, []);
-
-    // update the markers when there is a location change
-    useEffect(() => {
-        if (!map) return;
-
-        // take away previous vector layers (copied from above, maybe make a function for it???)
-        const existingVectorLayers = map.getLayers().getArray().filter(layer => layer.get("highlight"));
-        existingVectorLayers.forEach(layer => map.removeLayer(layer));
-
-        // create vector source for markers
-        const vectorSource = new VectorSource();
-        let selectedFeature: Feature<Point> | null = null; // keep track of selected marker
-
-        locations.forEach((location) => {
-            const isSelected = selectedLocation && selectedLocation.id === location.id;
-
-            // testing purposes for markers, not showing up on filter change
-            console.log("Marker icon for location2:", location.name, "->", location.markerIcon);
-
-            const feature = new Feature({
-                geometry: new Point(fromLonLat([location.longitude, location.latitude])),
-                id: location.id,
-                name: location.name,
-                url: location.url,
-                telephone: location.telephone,
-                address: location.address,
-                tags: location.tags,
-                county: location.county,
-            });
-
-            // adjust style based on selection
-            feature.setStyle(
-                new Style({
-                    image: new Icon({
-                        src: location.markerIcon
-                            ? `/images/markers/${location.markerIcon}`
-                            : `/images/markers/map-marker-red2.svg`,
-                        scale: isSelected ? 0.085 : 0.035,
-                        anchor: [0.5, 1],
-                        anchorXUnits: "fraction",
-                        anchorYUnits: "fraction",
-                    }),
-
-                    text: isSelected
-                        ? new Text({
-                            text: location.name,
-                            offsetY: -20,
-                            font: "bold 14px Arial",
-                            fill: new Fill({ color: "#000" }),
-                            stroke: new Stroke({ color: "#fff", width: 3 }),
-                        })
-                        : undefined, // only for selcted
-                    zIndex: isSelected ? 1000 : 1, // make higher z for visibility sake
-                })
-            );
-
-            if (isSelected) {
-                selectedFeature = feature; // store selected feature
-            }
-
-            vectorSource.addFeature(feature);
-        });
-
-        // create a new later for updated amrkers
-        const vectorLayer = new VectorLayer({
-            source: vectorSource,
-            zIndex: 5, // lower z index for everhy marker
-        });
-
-        vectorLayer.set("highlight", true);
-        map.addLayer(vectorLayer);
-
-        // ensure selcetd marker is alwaus on top
-        if (selectedFeature) {
-            const highlightLayer = new VectorLayer({
-                source: new VectorSource({ features: [selectedFeature] }),
-                zIndex: 1001, // very big z index
-            });
-            highlightLayer.set("highlight", true);
-            map.addLayer(highlightLayer);
-        }
-
-        // marker selection interaction
-        const selectInteraction = new OlSelect();
-        map.addInteraction(selectInteraction);
-
-        selectInteraction.on("select", (event) => {
-            const feature = event.selected[0];
-
-            if (feature && feature.getGeometry() instanceof Point) {
-                setSelectedFeature(feature as Feature<Point>);
-                handleSelectLocation(feature.getProperties());
-            } else {
-                setSelectedFeature(null);
-                setSelectedLocation(null);
-            }
-        });
-        return () => {
-            map.removeInteraction(selectInteraction);
-        };
-    }, [map, locations, selectedLocation]); // redo when selectedLcoation changes
 
     return (
         <div className="relative h-screen ml-auto z-10">
@@ -547,7 +489,13 @@ const Map = () => {
                             options={tagOptions}
                             value={selectedFilters}
                             onChange={(selectedOptions) =>
-                                setSelectedFilters(selectedOptions as { value: string; label: string }[])
+                                setSelectedFilters(
+                                    (selectedOptions as { value: string; label: string }[]).map(option => ({
+                                        ...option,
+                                        tagValue: option.value,
+                                        filterValue: option.value,
+                                    }))
+                                )
                             }
                             styles={customStyles}
                             isMulti
@@ -562,7 +510,12 @@ const Map = () => {
                             options={countyOptions}
                             value={selectedCounties}
                             onChange={(options) =>
-                                setSelectedCounties(options as { value: string; label: string }[])
+                                setSelectedCounties(
+                                    (options as { value: string; label: string }[]).map(option => ({
+                                        ...option,
+                                        countyValue: option.value,
+                                    }))
+                                )
                             }
                             styles={customStyles}
                             isMulti
@@ -594,7 +547,7 @@ const Map = () => {
                             <div className="flex items-center justify-between w-full px-2 mt-2 mb-3">
                                 {/* Left arrow */}
                                 <button
-                                    onClick={handlePrevious}
+                                    onClick={handlePreviousAttraction}
                                     className="text-2xl text-gray-600 hover:text-gray-900"
                                 >
                                     <i className="ri-arrow-left-s-line" />
@@ -623,7 +576,7 @@ const Map = () => {
                                 </div>
                                 {/* Right arrow */}
                                 <button
-                                    onClick={handleNext}
+                                    onClick={handleNextAttraction}
                                     className="text-2xl text-gray-600 hover:text-gray-900"
                                 >
                                     <i className="ri-arrow-right-s-line" />

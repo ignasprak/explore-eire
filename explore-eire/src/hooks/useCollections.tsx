@@ -49,7 +49,7 @@ export function useCollections() {
             .select('id, name')
             .eq('user_id', user.id);
 
-        // great fun to work this issue out at the start
+        // please never show up again
         if (error) {
             console.error('Error fetching collections:', error.message);
         } else {
@@ -107,7 +107,7 @@ export function useCollections() {
 
         setCollections((prev) => [...prev, newCollection]);
 
-        // stick it in
+        // place details into supabase
         const { data, error } = await supabase
             .from('collections')
             .insert([{ name: collectionName, user_id: user.id }])

@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import CollectionsList from './CollectionsList';
 import { Collection } from '@/types/types';
 
+// used to generate static paths at build time
 export async function generateStaticParams() {
     const { data: users, error } = await supabase.from('users').select('id');
     if (error || !users) return [];
@@ -17,6 +18,7 @@ export default async function CollectionsPage({
 }) {
     const { userId } = await params;
 
+    // fetch all collections for this user (and the locations inside them)
     const { data: collections, error } = await supabase
         .from('collections')
         .select(`
@@ -41,6 +43,7 @@ export default async function CollectionsPage({
         return <p className="text-red-500">Failed to load collections.</p>;
     }
 
+    // reformat date + flatten attraction array (because Supabase)
     const formattedCollections: Collection[] = (collections || []).map((collection) => ({
         ...collection,
         created_at: new Date(collection.created_at).toLocaleString('en-US', {

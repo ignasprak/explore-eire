@@ -5,6 +5,7 @@ import { supabase } from '@/app/lib/supabaseClient';
 import { useAuth } from '@/app/lib/authContext';
 import type { Location } from '@/types/location';
 
+// shape of a Trip 
 export type Trip = {
     id: string;
     name: string;
@@ -12,6 +13,7 @@ export type Trip = {
     user_trips?: UserTrip[];
 };
 
+// shape of an individual item in a Trip
 export type UserTrip = {
     trip_id: string;
     location_id: string;
@@ -50,6 +52,7 @@ export const TripsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useAuth();
     const [trips, setTrips] = useState<Trip[]>([]);
 
+    // fetch all of the user's trips and their associated attractions
     const fetchTrips = async () => {
         if (!user) return;
 
@@ -79,6 +82,7 @@ export const TripsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // new trip for the logged in user
     const createTrip = async (name: string) => {
         if (!user) return;
         const { error } = await supabase
@@ -92,6 +96,7 @@ export const TripsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // delete trip by ID and refresh the list
     const deleteTrip = async (tripId: string) => {
         const { error } = await supabase
             .from('trips')
@@ -105,6 +110,7 @@ export const TripsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    // add an attraction to a specific day of a trip
     const addToTrip = async (tripId: string, location: Location, day = 0) => {
         if (!user) return;
 
@@ -132,6 +138,7 @@ export const TripsProvider = ({ children }: { children: ReactNode }) => {
         await fetchTrips();
     };
 
+    // initial load / on login change
     useEffect(() => {
         fetchTrips();
     }, [user]);

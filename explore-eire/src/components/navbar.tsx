@@ -21,13 +21,13 @@ import { useConfirm } from "./confirmProvider";
 
 // marker colours for different day trips
 export const markerColors: Record<number, string> = {
-    0: "map-marker-red.svg",
-    1: "map-marker-orange.svg",
-    2: "map-marker-yellow.svg",
-    3: "map-marker-green.svg",
-    4: "map-marker-blue.svg",
-    5: "map-marker-indigo.svg",
-    6: "map-marker-violet.svg",
+    0: "/images/markers/map-marker-red.svg",
+    1: "/images/markers/map-marker-orange.svg",
+    2: "/images/markers/map-marker-yellow.svg",
+    3: "/images/markers/map-marker-green.svg",
+    4: "/images/markers/map-marker-blue.svg",
+    5: "/images/markers/map-marker-indigo.svg",
+    6: "/images/markers/map-marker-violet.svg",
 };
 
 // main component
@@ -63,6 +63,7 @@ export default function Navbar() {
         const selectedCollection = collections.find(c => c.id === collectionId);
         if (!selectedCollection) return;
 
+        // map Failte API fields to custom Location type
         const attractions: Location[] = selectedCollection.user_collections
             .filter(uc => uc.attractions)
             .map(uc => {
@@ -79,7 +80,7 @@ export default function Navbar() {
                     tags: a.Tags ?? a.tags ?? '',
                     latitude: a.Latitude ?? a.latitude,
                     longitude: a.Longitude ?? a.longitude,
-                    markerIcon: 'map-marker-red.svg',
+                    markerIcon: '/images/markers/map-marker-red.svg',
                 };
             });
 
@@ -142,7 +143,7 @@ export default function Navbar() {
         }
     };
 
-    // have another look at
+    // if a trip is expanded, group its attractions by day
     useEffect(() => {
         if (!expandedTrip) return;
 
@@ -159,8 +160,8 @@ export default function Navbar() {
             grouped[day].push(ut);
         });
 
-        const sortedGrouped = Object.entries(grouped).reduce((acc, [day, list]) => {
-            acc[+day] = list.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+        const sortedGrouped = Object.entries(grouped).reduce((acc, [day, unsortedTripItem]) => {
+            acc[+day] = unsortedTripItem.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
             return acc;
         }, {} as Record<number, any[]>);
 
@@ -168,14 +169,14 @@ export default function Navbar() {
         setAllDays([...days].sort((a, b) => a - b));
     }, [expandedTrip, trips]);
 
-    // self explanatory
-    const handleMoveDay = async (item: any, newDay: number) => {
+    // move an attraction to a different day and update backend
+    const handleMoveDay = async (tripEntry: any, newDay: number) => {
         if (!expandedTrip) return;
 
         const { error } = await supabase
             .from("user_trips")
             .update({ day: newDay })
-            .match({ trip_id: expandedTrip, location_id: item.location_id });
+            .match({ trip_id: expandedTrip, location_id: tripEntry.location_id });
 
         if (error) {
             console.error("Error updating day", error.message);
@@ -206,13 +207,13 @@ export default function Navbar() {
             tags: ut.attractions.Tags ?? '',
             latitude: ut.attractions.Latitude,
             longitude: ut.attractions.Longitude,
-            markerIcon: markerColors[ut.day ?? 0] || "map-marker-red.svg",
+            markerIcon: markerColors[ut.day ?? 0] || "/images/markers/map-marker-red.svg",
         }));
 
         setLocations(attractions);
     };
 
-    // button for adding another day, limit is 7, because the rainbow deso not have any more primary colours
+    // can't have more than 7 days...... limited by the colours of the rainbow 
     const handleAddNewDay = () => {
         if (allDays.length >= 7) {
             alert("Trip day limit reached. You can only have up to 7 days.");
@@ -343,7 +344,6 @@ export default function Navbar() {
                                         </div>
                                     </button>
                                 ))}
-
                             </div>
                         )}
 
@@ -369,7 +369,7 @@ export default function Navbar() {
                                         .filter((ut) => ut.attractions)
                                         .map((ut) => {
                                             const a = ut.attractions;
-                                            const markerIcon = markerColors[ut.day ?? 0] || "map-marker-red.svg";
+                                            const markerIcon = markerColors[ut.day ?? 0] || "/images/markers/map-marker-red.svg";
 
                                             return {
                                                 id: a.id,
@@ -480,7 +480,7 @@ export default function Navbar() {
                                             </button>
                                         </div>
 
-                                        {/* === Add to Trip Dropdown === */}
+                                        {/* Add to Trip Dropdown */}
                                         {trips.length > 0 && (
                                             <div className="mt-3">
                                                 <label className="block text-xs font-medium text-gray-500 mb-1">Add to Trip</label>
@@ -609,8 +609,6 @@ export default function Navbar() {
                                     </div>
                                 ))}
                             </div>
-
-
                         </div>
                     )}
 
@@ -793,7 +791,6 @@ export default function Navbar() {
                         <span className="text-xs">Settings</span>
                     </button>
 
-
                     {/* Log Out */}
                     <div className="mt-auto p-4">
                         {user && (
@@ -810,12 +807,8 @@ export default function Navbar() {
                             </button>
                         )}
                     </div>
-
-
                 </div >
             </>
-
-
         );
     }
 

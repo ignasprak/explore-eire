@@ -5,8 +5,9 @@ import { supabase } from '../../lib/supabaseClient';
 import type { Collection, UserCollection } from '@/types/types';
 
 export default function CollectionsList({ collections }: { collections: Collection[] }) {
-    const [localCollections, setLocalCollections] = useState(collections);
+    const [localCollections, setLocalCollections] = useState(collections); // state to manage live updates
 
+    // called when user wants to delete a single attraction from a collection
     async function handleDeleteAttraction(locationId: string, collectionId: string) {
         const confirmDelete = confirm('Are you sure you want to delete this attraction?');
         if (!confirmDelete) return;
@@ -21,6 +22,7 @@ export default function CollectionsList({ collections }: { collections: Collecti
             alert('Failed to delete the attraction. Please try again.');
         } else {
             alert('Attraction deleted successfully!');
+            // update UI
             setLocalCollections((prevCollections) =>
                 prevCollections.map((collection) =>
                     collection.id === collectionId
@@ -36,6 +38,7 @@ export default function CollectionsList({ collections }: { collections: Collecti
         }
     }
 
+    // bye bye collection
     async function handleDeleteCollection(collectionId: string) {
         const confirmDelete = confirm(
             'Are you sure you want to delete this collection? All associated attractions will also be deleted.'
@@ -58,6 +61,7 @@ export default function CollectionsList({ collections }: { collections: Collecti
         }
     }
 
+    // list renders
     return (
         <ul className="space-y-8">
             {localCollections.map((collection) => (
