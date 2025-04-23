@@ -620,22 +620,26 @@ export default function Navbar() {
 
                     {/* Log Out */}
                     <div className="mt-auto mb-8 w-full">
-                        {/* Settings Section */}
-                        <div className="w-full flex flex-col items-center">
-                            <button
-                                onClick={() => {
-                                    setSettingsExpanded(true);
-                                    setExpandedCollection(null);
-                                    setExpandedTrip(null);
-                                    setLocations([]);
-                                }}
+                        {user && (
+                            <>
+                                {/* Settings Section */}
+                                <div className="w-full flex flex-col items-center">
+                                    <button
+                                        onClick={() => {
+                                            setSettingsExpanded(true);
+                                            setExpandedCollection(null);
+                                            setExpandedTrip(null);
+                                            setLocations([]);
+                                        }}
 
-                                className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
-                            >
-                                <i className="ri-settings-3-line text-xl mb-1"></i>
-                                <span className="text-xs">Settings</span>
-                            </button>
-                        </div>
+                                        className="w-full flex flex-col items-center justify-center text-gray-700 rounded-md hover:bg-gray-100 py-2"
+                                    >
+                                        <i className="ri-settings-3-line text-xl mb-1"></i>
+                                        <span className="text-xs">Settings</span>
+                                    </button>
+                                </div>
+                            </>
+                        )}
 
                         {user ? (
                             <div className="w-full flex flex-col items-center space-y-4 mb-6">
