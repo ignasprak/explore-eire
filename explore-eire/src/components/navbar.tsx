@@ -48,6 +48,8 @@ export default function Navbar() {
     const [allDays, setAllDays] = useState<number[]>([]);
     const confirm = useConfirm();
     const [settingsExpanded, setSettingsExpanded] = useState(false);
+    const [notification, setNotification] = useState<string | null>(null);
+    const [notificationType, setNotificationType] = useState<"success" | "error">("success");
 
     // what happens when the user clicks on a collection
     const handleCollectionClick = (collectionId: string) => {
@@ -169,6 +171,12 @@ export default function Navbar() {
         setAllDays([...days].sort((a, b) => a - b));
     }, [expandedTrip, trips]);
 
+    useEffect(() => {
+        if (!notification) return;
+        const t = setTimeout(() => setNotification(null), 3000);
+        return () => clearTimeout(t);
+    }, [notification]);
+
     // move an attraction to a different day and update backend
     const handleMoveDay = async (tripEntry: any, newDay: number) => {
         if (!expandedTrip) return;
@@ -239,6 +247,17 @@ export default function Navbar() {
     {
         return (
             <>
+                {notification && (
+                    <div
+                        className={`
+      fixed top-4 left-1/2 transform -translate-x-1/2
+      px-4 py-2 rounded shadow
+      ${notificationType === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}
+    `}
+                    >
+                        {notification}
+                    </div>
+                )}
                 <nav className="hidden md:flex fixed top-0 left-0 h-screen w-20 bg-white shadow-lg flex-col items-center z-50">
 
                     {/* Logo */}
@@ -251,6 +270,8 @@ export default function Navbar() {
                     </div>
 
                     {user && (
+
+
                         <>
                             {/* Sidebar Links */}
                             <div className="flex flex-col mt-10 w-full space-y-3">
@@ -506,11 +527,14 @@ export default function Navbar() {
 
                                                         if (error) {
                                                             console.error("Failed to add to trip:", error.message);
-                                                            alert("Failed to add attraction to trip.");
+                                                            setNotificationType("error");
+                                                            setNotification("Failed to add attraction to trip.");
                                                         } else {
                                                             await refetchTrips();
-                                                            alert("Attraction added to trip!");
+                                                            setNotificationType("success");
+                                                            setNotification("Attraction added to trip!");
                                                         }
+
 
                                                         e.target.value = "";
                                                     }}
@@ -717,19 +741,6 @@ export default function Navbar() {
                                 />
                                 <label htmlFor="focusOutline" className="text-sm text-gray-700">
                                     Show Keyboard Focus Ring
-                                </label>
-
-                                {/* Dyslexia Font */}
-                                <input
-                                    type="checkbox"
-                                    id="dyslexiaFont"
-                                    onChange={(e) => {
-                                        document.body.classList.toggle('dyslexia-font', e.target.checked);
-                                    }}
-                                    className="mr-2"
-                                />
-                                <label htmlFor="dyslexiaFont" className="text-sm text-gray-700">
-                                    Dyslexia-Friendly Font
                                 </label>
 
                                 {/* High Contrast Mode */}
